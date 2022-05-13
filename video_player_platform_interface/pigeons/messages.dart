@@ -64,8 +64,3 @@ abstract class VideoPlayerApi {
   void setMixWithOthers(MixWithOthersMessage msg);
   void setPictureInPicture(PictureInPictureMessage msg);
 }
-
-void configurePigeon(PigeonOptions opts) {
-  opts.dartOut = 'lib/messages.dart';
-  opts.dartTestOut = 'test/test.dart';
-}
