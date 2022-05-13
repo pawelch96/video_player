@@ -472,6 +472,15 @@ packages:
       relative: true
     source: path
     version: "2.4.2"
+  video_player_android:
+    dependency: transitive
+    description:
+      path: video_player_android
+      ref: main
+      resolved-ref: "35bd39646accfa183a9a687e6a7116a6e81ce20f"
+      url: "https://github.com/pawelch96/video_player.git"
+    source: git
+    version: "2.3.3"
   video_player_avfoundation:
     dependency: transitive
     description:

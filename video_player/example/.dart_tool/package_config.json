@@ -416,6 +416,12 @@
       "languageVersion": "2.14"
     },
     {
+      "name": "video_player_android",
+      "rootUri": "file:///Users/pchmiel/Desktop/development/flutter/.pub-cache/git/video_player-35bd39646accfa183a9a687e6a7116a6e81ce20f/video_player_android",
+      "packageUri": "lib/",
+      "languageVersion": "2.14"
+    },
+    {
       "name": "video_player_avfoundation",
       "rootUri": "file:///Users/pchmiel/Desktop/development/flutter/.pub-cache/git/video_player-0a4cc4d7eced7906e94e87fda3ef914d55ff518d/video_player_avfoundation",
       "packageUri": "lib/",
@@ -482,7 +488,7 @@
       "languageVersion": "2.12"
     }
   ],
-  "generated": "2022-05-13T16:24:25.796144Z",
+  "generated": "2022-05-13T16:57:37.802919Z",
   "generator": "pub",
   "generatorVersion": "2.16.2"
 }

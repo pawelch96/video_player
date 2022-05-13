@@ -170,6 +170,15 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "2.1.1"
+  video_player_android:
+    dependency: "direct main"
+    description:
+      path: video_player_android
+      ref: main
+      resolved-ref: "35bd39646accfa183a9a687e6a7116a6e81ce20f"
+      url: "https://github.com/pawelch96/video_player.git"
+    source: git
+    version: "2.3.3"
   video_player_avfoundation:
     dependency: "direct main"
     description:
