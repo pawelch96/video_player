@@ -405,9 +405,9 @@
     },
     {
       "name": "video_player_platform_interface",
-      "rootUri": "../../../video_player_platform_interface",
+      "rootUri": "file:///Users/pchmiel/Desktop/development/flutter/.pub-cache/git/video_player-1606b36517703e919396164e71ddb59d4eed7217/video_player_platform_interface",
       "packageUri": "lib/",
-      "languageVersion": "2.12"
+      "languageVersion": "2.14"
     },
     {
       "name": "vm_service",
@@ -464,7 +464,7 @@
       "languageVersion": "2.12"
     }
   ],
-  "generated": "2022-05-13T11:42:26.159852Z",
+  "generated": "2022-05-13T14:43:57.339885Z",
   "generator": "pub",
   "generatorVersion": "2.16.2"
 }

@@ -128,12 +128,6 @@
       "languageVersion": "2.12"
     },
     {
-      "name": "flutter_web_plugins",
-      "rootUri": "file:///Users/pchmiel/Desktop/development/flutter/packages/flutter_web_plugins",
-      "packageUri": "lib/",
-      "languageVersion": "2.12"
-    },
-    {
       "name": "frontend_server_client",
       "rootUri": "file:///Users/pchmiel/Desktop/development/flutter/.pub-cache/hosted/pub.dartlang.org/frontend_server_client-2.1.2",
       "packageUri": "lib/",
@@ -422,28 +416,10 @@
       "languageVersion": "2.14"
     },
     {
-      "name": "video_player_android",
-      "rootUri": "../../../video_player_android",
-      "packageUri": "lib/",
-      "languageVersion": "2.14"
-    },
-    {
-      "name": "video_player_avfoundation",
-      "rootUri": "../../../video_player_avfoundation",
-      "packageUri": "lib/",
-      "languageVersion": "2.14"
-    },
-    {
       "name": "video_player_platform_interface",
-      "rootUri": "../../../video_player_platform_interface",
+      "rootUri": "file:///Users/pchmiel/Desktop/development/flutter/.pub-cache/git/video_player-1606b36517703e919396164e71ddb59d4eed7217/video_player_platform_interface",
       "packageUri": "lib/",
-      "languageVersion": "2.12"
-    },
-    {
-      "name": "video_player_web",
-      "rootUri": "../../../video_player_web",
-      "packageUri": "lib/",
-      "languageVersion": "2.12"
+      "languageVersion": "2.14"
     },
     {
       "name": "vm_service",
@@ -500,7 +476,7 @@
       "languageVersion": "2.12"
     }
   ],
-  "generated": "2022-05-13T11:41:47.977287Z",
+  "generated": "2022-05-13T14:41:42.756506Z",
   "generator": "pub",
   "generatorVersion": "2.16.2"
 }

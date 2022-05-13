@@ -62,20 +62,8 @@
       "languageVersion": "2.12"
     },
     {
-      "name": "flutter_web_plugins",
-      "rootUri": "file:///Users/pchmiel/Desktop/development/flutter/packages/flutter_web_plugins",
-      "packageUri": "lib/",
-      "languageVersion": "2.12"
-    },
-    {
       "name": "html",
       "rootUri": "file:///Users/pchmiel/Desktop/development/flutter/.pub-cache/hosted/pub.dartlang.org/html-0.15.0",
-      "packageUri": "lib/",
-      "languageVersion": "2.12"
-    },
-    {
-      "name": "js",
-      "rootUri": "file:///Users/pchmiel/Desktop/development/flutter/.pub-cache/hosted/pub.dartlang.org/js-0.6.3",
       "packageUri": "lib/",
       "languageVersion": "2.12"
     },
@@ -164,28 +152,10 @@
       "languageVersion": "2.14"
     },
     {
-      "name": "video_player_android",
-      "rootUri": "../../video_player_android",
-      "packageUri": "lib/",
-      "languageVersion": "2.14"
-    },
-    {
-      "name": "video_player_avfoundation",
-      "rootUri": "../../video_player_avfoundation",
-      "packageUri": "lib/",
-      "languageVersion": "2.14"
-    },
-    {
       "name": "video_player_platform_interface",
-      "rootUri": "../../video_player_platform_interface",
+      "rootUri": "file:///Users/pchmiel/Desktop/development/flutter/.pub-cache/git/video_player-1606b36517703e919396164e71ddb59d4eed7217/video_player_platform_interface",
       "packageUri": "lib/",
-      "languageVersion": "2.12"
-    },
-    {
-      "name": "video_player_web",
-      "rootUri": "../../video_player_web",
-      "packageUri": "lib/",
-      "languageVersion": "2.12"
+      "languageVersion": "2.14"
     },
     {
       "name": "video_player",
@@ -194,7 +164,7 @@
       "languageVersion": "2.14"
     }
   ],
-  "generated": "2022-05-13T11:41:45.176820Z",
+  "generated": "2022-05-13T14:40:31.147477Z",
   "generator": "pub",
   "generatorVersion": "2.16.2"
 }

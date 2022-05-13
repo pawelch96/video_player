@@ -236,9 +236,11 @@ packages:
   video_player_platform_interface:
     dependency: "direct main"
     description:
-      path: "../video_player_platform_interface"
-      relative: true
-    source: path
+      path: video_player_platform_interface
+      ref: main
+      resolved-ref: "1606b36517703e919396164e71ddb59d4eed7217"
+      url: "https://github.com/pawelch96/video_player.git"
+    source: git
     version: "5.1.2"
   watcher:
     dependency: transitive
