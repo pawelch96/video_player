@@ -405,7 +405,7 @@
     },
     {
       "name": "video_player_platform_interface",
-      "rootUri": "file:///Users/pchmiel/Desktop/development/flutter/.pub-cache/git/video_player-1606b36517703e919396164e71ddb59d4eed7217/video_player_platform_interface",
+      "rootUri": "file:///Users/pchmiel/Desktop/development/flutter/.pub-cache/git/video_player-ba5bed785715f362bd60bc1e100e9c58228efd16/video_player_platform_interface",
       "packageUri": "lib/",
       "languageVersion": "2.14"
     },
@@ -464,7 +464,7 @@
       "languageVersion": "2.12"
     }
   ],
-  "generated": "2022-05-13T16:25:08.694234Z",
+  "generated": "2022-05-13T18:00:51.790583Z",
   "generator": "pub",
   "generatorVersion": "2.16.2"
 }
