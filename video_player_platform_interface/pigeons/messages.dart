@@ -2,44 +2,50 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.9
-
-import 'package:pigeon/pigeon_lib.dart';
+import 'package:pigeon/pigeon.dart';
 
 class TextureMessage {
-  int textureId;
+  int? textureId;
 }
 
 class LoopingMessage {
-  int textureId;
-  bool isLooping;
+  int? textureId;
+  bool? isLooping;
 }
 
 class VolumeMessage {
-  int textureId;
-  double volume;
+  int? textureId;
+  double? volume;
 }
 
 class PlaybackSpeedMessage {
-  int textureId;
-  double speed;
+  int? textureId;
+  double? speed;
 }
 
 class PositionMessage {
-  int textureId;
-  int position;
+  int? textureId;
+  int? position;
 }
 
 class CreateMessage {
-  String asset;
-  String uri;
-  String packageName;
-  String formatHint;
-  Map<String, String> httpHeaders;
+  String? asset;
+  String? uri;
+  String? packageName;
+  String? formatHint;
+  Map<String?, String?>? httpHeaders;
 }
 
 class MixWithOthersMessage {
-  bool mixWithOthers;
+  bool? mixWithOthers;
+}
+
+class PiPMessage {
+  int? textureId;
+  double? top;
+  double? left;
+  double? width;
+  double? height;
 }
 
 @HostApi(dartHostTestHandler: 'TestHostVideoPlayerApi')
@@ -55,6 +61,9 @@ abstract class VideoPlayerApi {
   void seekTo(PositionMessage msg);
   void pause(TextureMessage msg);
   void setMixWithOthers(MixWithOthersMessage msg);
+  void enablePictureInPicture(PiPMessage msg);
+  bool isPictureInPictureEnabled(TextureMessage msg);
+  void disablePictureInPicture(TextureMessage msg);
 }
 
 void configurePigeon(PigeonOptions opts) {

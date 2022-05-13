@@ -538,7 +538,7 @@ class VideoPlayerController extends ValueNotifier<VideoPlayerValue> {
 
   // ignore: use_setters_to_change_properties
   ///Set GlobalKey of VideoPlayer. Used in PiP methods called from controls.
-  void setBetterPlayerGlobalKey(GlobalKey videoPlayerGlobalKey) {
+  void setVideoPlayerGlobalKey(GlobalKey videoPlayerGlobalKey) {
     value._videoPlayerGlobalKey = videoPlayerGlobalKey;
   }
 

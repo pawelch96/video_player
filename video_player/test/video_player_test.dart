@@ -102,9 +102,9 @@ class FakeController extends ValueNotifier<VideoPlayerValue>
   }
 
   @override
-  void setBetterPlayerGlobalKey(
+  void setVideoPlayerGlobalKey(
       GlobalKey<State<StatefulWidget>> videoPlayerGlobalKey) {
-    // TODO: implement setBetterPlayerGlobalKey
+    // TODO: implement setVideoPlayerGlobalKey
   }
 }
 

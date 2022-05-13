@@ -35,6 +35,7 @@
 
 @interface FLTVideoPlayer : NSObject <FlutterTexture, FlutterStreamHandler>
 @property(readonly, nonatomic) AVPlayer *player;
+@property (readonly) AVPlayerLayer *playerLayer;
 @property(readonly, nonatomic) AVPlayerItemVideoOutput *videoOutput;
 @property(readonly, nonatomic) CADisplayLink *displayLink;
 @property(nonatomic) FlutterEventChannel *eventChannel;
@@ -61,6 +62,22 @@ static void *playbackBufferFullContext = &playbackBufferFullContext;
 - (instancetype)initWithAsset:(NSString *)asset frameUpdater:(FLTFrameUpdater *)frameUpdater {
   NSString *path = [[NSBundle mainBundle] pathForResource:asset ofType:nil];
   return [self initWithURL:[NSURL fileURLWithPath:path] frameUpdater:frameUpdater httpHeaders:@{}];
+}
+
+- (instancetype)initWithFrame:(CGRect)frame {
+    self = [super init];
+    NSAssert(self, @"super init cannot be nil");
+    _isInitialized = false;
+    _isPlaying = false;
+    _disposed = false;
+    _player = [[AVPlayer alloc] init];
+    _player.actionAtItemEnd = AVPlayerActionAtItemEndNone;
+    ///Fix for loading large videos
+    if (@available(iOS 10.0, *)) {
+        _player.automaticallyWaitsToMinimizeStalling = false;
+    }
+    self._observersAdded = false;
+    return self;
 }
 
 - (void)addObservers:(AVPlayerItem *)item {
@@ -557,6 +574,8 @@ NS_INLINE CGFloat radiansToDegrees(CGFloat radians) {
                                     frameUpdater:frameUpdater
                                      httpHeaders:input.httpHeaders];
     return [self onPlayerSetup:player frameUpdater:frameUpdater];
+    //player = [[FLTVideoPlayer alloc] initWithFrame:CGRectZero];
+        // [self onPlayerSetup:player result:result];
   } else {
     *error = [FlutterError errorWithCode:@"video_player" message:@"not implemented" details:nil];
     return nil;
