@@ -472,6 +472,15 @@ packages:
       relative: true
     source: path
     version: "2.4.2"
+  video_player_avfoundation:
+    dependency: transitive
+    description:
+      path: video_player_avfoundation
+      ref: main
+      resolved-ref: "0a4cc4d7eced7906e94e87fda3ef914d55ff518d"
+      url: "https://github.com/pawelch96/video_player.git"
+    source: git
+    version: "2.3.4"
   video_player_platform_interface:
     dependency: transitive
     description:

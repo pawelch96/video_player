@@ -416,6 +416,12 @@
       "languageVersion": "2.14"
     },
     {
+      "name": "video_player_avfoundation",
+      "rootUri": "file:///Users/pchmiel/Desktop/development/flutter/.pub-cache/git/video_player-0a4cc4d7eced7906e94e87fda3ef914d55ff518d/video_player_avfoundation",
+      "packageUri": "lib/",
+      "languageVersion": "2.14"
+    },
+    {
       "name": "video_player_platform_interface",
       "rootUri": "file:///Users/pchmiel/Desktop/development/flutter/.pub-cache/git/video_player-1606b36517703e919396164e71ddb59d4eed7217/video_player_platform_interface",
       "packageUri": "lib/",
@@ -476,7 +482,7 @@
       "languageVersion": "2.12"
     }
   ],
-  "generated": "2022-05-13T14:41:42.756506Z",
+  "generated": "2022-05-13T16:24:25.796144Z",
   "generator": "pub",
   "generatorVersion": "2.16.2"
 }

@@ -7,3 +7,4 @@ path_provider_linux=/Users/pchmiel/Desktop/development/flutter/.pub-cache/hosted
 path_provider_macos=/Users/pchmiel/Desktop/development/flutter/.pub-cache/hosted/pub.dartlang.org/path_provider_macos-2.0.6/
 path_provider_windows=/Users/pchmiel/Desktop/development/flutter/.pub-cache/hosted/pub.dartlang.org/path_provider_windows-2.0.6/
 video_player=/Users/pchmiel/Desktop/Projects/SelfMade/video_player_fork/video_player/video_player/
+video_player_avfoundation=/Users/pchmiel/Desktop/development/flutter/.pub-cache/git/video_player-0a4cc4d7eced7906e94e87fda3ef914d55ff518d/video_player_avfoundation/
