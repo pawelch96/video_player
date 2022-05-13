@@ -77,34 +77,13 @@ class FakeController extends ValueNotifier<VideoPlayerValue>
   ) async {}
 
   @override
-  Future<void> disablePictureInPicture() async {}
-
-  @override
-  Future<void> _enablePictureInPicture(
-      {double? top, double? left, double? width, double? height}) async {}
-
-  @override
-  Future<bool?> _isPictureInPictureSupported() async {
-    return null;
-  }
-
-  @override
-  Future<void>? enablePictureInPicture(
-      GlobalKey<State<StatefulWidget>> videoPlayerGlobalKey) {
-    // TODO: implement enablePictureInPicture
+  Future<void> setPIP(bool enabled,
+      {double left = 0.0,
+      double top = 0.0,
+      double width = 0.0,
+      double height = 0.0}) {
+    // TODO: implement setPIP
     throw UnimplementedError();
-  }
-
-  @override
-  Future<bool> isPictureInPictureSupported() {
-    // TODO: implement isPictureInPictureSupported
-    throw UnimplementedError();
-  }
-
-  @override
-  void setBetterPlayerGlobalKey(
-      GlobalKey<State<StatefulWidget>> videoPlayerGlobalKey) {
-    // TODO: implement setBetterPlayerGlobalKey
   }
 }
 

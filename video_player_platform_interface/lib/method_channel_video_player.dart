@@ -102,36 +102,10 @@ class MethodChannelVideoPlayer extends VideoPlayerPlatform {
   }
 
   @override
-  Future<void> enablePictureInPicture(int? textureId, double? top, double? left,
-      double? width, double? height) async {
-    return _api.enablePictureInPicture(
-      PiPMessage()
-        ..textureId = textureId
-        ..top = top
-        ..left = left
-        ..height = height
-        ..width = width,
-    );
-  }
-
-  @override
-  Future<bool?> isPictureInPictureEnabled(int? textureId) {
-    return _api
-        .isPictureInPictureEnabled(TextureMessage()..textureId = textureId);
-  }
-
-  @override
-  Future<void> disablePictureInPicture(int? textureId) {
-    return _api
-        .disablePictureInPicture(TextureMessage()..textureId = textureId);
-  }
-
-  @override
   Stream<VideoEvent> videoEventsFor(int textureId) {
     return _eventChannelFor(textureId)
         .receiveBroadcastStream()
         .map((dynamic event) {
-      //TODO check in native
       final Map<dynamic, dynamic> map = event as Map<dynamic, dynamic>;
       switch (map['event']) {
         case 'initialized':
@@ -157,6 +131,14 @@ class MethodChannelVideoPlayer extends VideoPlayerPlatform {
           return VideoEvent(eventType: VideoEventType.bufferingStart);
         case 'bufferingEnd':
           return VideoEvent(eventType: VideoEventType.bufferingEnd);
+        case 'startingPiP':
+          return VideoEvent(eventType: VideoEventType.startingPiP);
+        case 'stoppedPiP':
+          return VideoEvent(eventType: VideoEventType.stoppedPiP);
+        case 'expandButtonTapPiP':
+          return VideoEvent(eventType: VideoEventType.expandButtonTapPiP);
+        case 'closeButtonTapPiP':
+          return VideoEvent(eventType: VideoEventType.closeButtonTapPiP);
         default:
           return VideoEvent(eventType: VideoEventType.unknown);
       }
@@ -173,6 +155,18 @@ class MethodChannelVideoPlayer extends VideoPlayerPlatform {
     return _api.setMixWithOthers(
       MixWithOthersMessage()..mixWithOthers = mixWithOthers,
     );
+  }
+
+  @override
+  Future<void> setPictureInPicture(int textureId, bool enabled, double left,
+      double top, double width, double height) {
+    return _api.setPictureInPicture(PictureInPictureMessage()
+      ..textureId = textureId
+      ..enabled = enabled ? 1 : 0
+      ..left = left
+      ..top = top
+      ..width = width
+      ..height = height);
   }
 
   EventChannel _eventChannelFor(int textureId) {

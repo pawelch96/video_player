@@ -104,22 +104,17 @@ abstract class VideoPlayerPlatform extends PlatformInterface {
     throw UnimplementedError('setMixWithOthers() has not been implemented.');
   }
 
-  ///Enables PiP mode.
-  Future<void> enablePictureInPicture(int? textureId, double? top, double? left,
-      double? width, double? height) {
+  /// Sets the PictureInPictureVideo.
+  Future<void> setPictureInPicture(
+    int textureId,
+    bool enabled,
+    double left,
+    double top,
+    double width,
+    double height,
+  ) {
     throw UnimplementedError(
-        'enablePictureInPicture() has not been implemented.');
-  }
-
-  ///Disables PiP mode.
-  Future<void> disablePictureInPicture(int? textureId) {
-    throw UnimplementedError(
-        'disablePictureInPicture() has not been implemented.');
-  }
-
-  Future<bool?> isPictureInPictureEnabled(int? textureId) {
-    throw UnimplementedError(
-        'isPictureInPictureEnabled() has not been implemented.');
+        'setPictureInPictureVideo() has not been implemented.');
   }
 }
 
@@ -296,14 +291,20 @@ enum VideoEventType {
   /// The video stopped to buffer.
   bufferingEnd,
 
+  /// The video starting to picture in picture.
+  startingPiP,
+
+  /// The video stopped to picture in picture.
+  stoppedPiP,
+
+  /// Event when picture in picture expand button is pressed
+  expandButtonTapPiP,
+
+  /// Event when picture in picture close button is pressed
+  closeButtonTapPiP,
+
   /// An unknown event has been received.
   unknown,
-
-  /// The video is displayed in Picture in Picture mode
-  pipStart,
-
-  /// Picture in picture mode has been dismissed
-  pipStop,
 }
 
 /// Describes a discrete segment of time within a video using a [start] and

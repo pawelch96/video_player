@@ -6,6 +6,7 @@
 
 #import <AVFoundation/AVFoundation.h>
 #import <GLKit/GLKit.h>
+#import <AVKit/AVKit.h>
 
 #import "AVAssetTrackUtils.h"
 #import "messages.g.h"
@@ -33,7 +34,7 @@
 }
 @end
 
-@interface FLTVideoPlayer : NSObject <FlutterTexture, FlutterStreamHandler>
+@interface FLTVideoPlayer : NSObject <FlutterTexture, FlutterStreamHandler, AVPictureInPictureControllerDelegate>
 @property(readonly, nonatomic) AVPlayer *player;
 @property(readonly, nonatomic) AVPlayerItemVideoOutput *videoOutput;
 @property(readonly, nonatomic) CADisplayLink *displayLink;
@@ -44,6 +45,8 @@
 @property(nonatomic, readonly) BOOL isPlaying;
 @property(nonatomic) BOOL isLooping;
 @property(nonatomic, readonly) BOOL isInitialized;
+@property(nonatomic) AVPlayerLayer* _playerLayer;
+@property(nonatomic) bool _pictureInPicture;
 - (instancetype)initWithURL:(NSURL *)url
                frameUpdater:(FLTFrameUpdater *)frameUpdater
                 httpHeaders:(nonnull NSDictionary<NSString *, NSString *> *)headers;
@@ -56,6 +59,15 @@ static void *durationContext = &durationContext;
 static void *playbackLikelyToKeepUpContext = &playbackLikelyToKeepUpContext;
 static void *playbackBufferEmptyContext = &playbackBufferEmptyContext;
 static void *playbackBufferFullContext = &playbackBufferFullContext;
+
+static NSString *const readyForDisplayKeyPath = @"readyForDisplay";
+
+#if TARGET_OS_IOS
+  void (^__strong _Nonnull _restoreUserInterfaceForPIPStopCompletionHandler)(BOOL);
+API_AVAILABLE(ios(9.0))
+AVPictureInPictureController *_pipController;
+#endif
+
 
 @implementation FLTVideoPlayer
 - (instancetype)initWithAsset:(NSString *)asset frameUpdater:(FLTFrameUpdater *)frameUpdater {
@@ -109,6 +121,8 @@ static void *playbackBufferFullContext = &playbackBufferFullContext;
       _eventSink(@{@"event" : @"completed"});
     }
   }
+  // Remove PIP
+  [self setPictureInPicture:false];
 }
 
 const int64_t TIME_UNSET = -9223372036854775807;
@@ -226,6 +240,7 @@ NS_INLINE CGFloat radiansToDegrees(CGFloat radians) {
 
   _player = [AVPlayer playerWithPlayerItem:item];
   _player.actionAtItemEnd = AVPlayerActionAtItemEndNone;
+  _player.automaticallyWaitsToMinimizeStalling = false;
 
   [self createVideoOutputAndDisplayLink:frameUpdater];
 
@@ -326,7 +341,12 @@ NS_INLINE CGFloat radiansToDegrees(CGFloat radians) {
         }
         // This completion block will run on an AVFoundation background queue.
         // Hop back to the main thread to set up event sink.
-        [self performSelector:_cmd onThread:NSThread.mainThread withObject:self waitUntilDone:NO];
+        //[self performSelector:_cmd onThread:NSThread.mainThread withObject:self waitUntilDone:NO];//TODO check
+        if (!NSThread.isMainThread) {
+          [self performSelector:_cmd onThread:NSThread.mainThread withObject:self waitUntilDone:NO];
+        } else {
+          [self setupEventSinkIfReadyToPlay];
+        }
       };
       [asset loadValuesAsynchronouslyForKeys:@[ @"tracks" ]
                            completionHandler:trackCompletionHandler];
@@ -420,6 +440,138 @@ NS_INLINE CGFloat radiansToDegrees(CGFloat radians) {
 
   _player.rate = speed;
 }
+
+- (void)setPictureInPicture:(BOOL)pictureInPicture
+{
+    // if (self._pictureInPicture == pictureInPicture) {
+    //     return;
+    // }
+
+    self._pictureInPicture = pictureInPicture;
+    if (@available(iOS 9.0, *)) {
+        if (_pipController && self._pictureInPicture && ![_pipController isPictureInPictureActive]) {
+            dispatch_async(dispatch_get_main_queue(), ^{
+                [_pipController startPictureInPicture];
+            });
+        } else if (_pipController && !self._pictureInPicture && [_pipController isPictureInPictureActive]) {
+            dispatch_async(dispatch_get_main_queue(), ^{
+                [_pipController stopPictureInPicture];
+            });
+        } else {
+            // Fallback on earlier versions
+        } }
+}
+
+#if TARGET_OS_IOS
+- (void)setRestoreUserInterfaceForPIPStopCompletionHandler:(BOOL)restore
+{
+  if (_restoreUserInterfaceForPIPStopCompletionHandler != NULL) {
+    _restoreUserInterfaceForPIPStopCompletionHandler(restore);
+    _restoreUserInterfaceForPIPStopCompletionHandler = NULL;
+  }
+}
+
+- (void)setupPipController {
+    if (@available(iOS 9.0, *)) {
+      if (![AVPictureInPictureController isPictureInPictureSupported]) {
+          // Fallback on earlier versions
+          return;
+      }
+      [[AVAudioSession sharedInstance] setCategory:AVAudioSessionCategoryPlayback error:nil];
+      [[AVAudioSession sharedInstance] setActive: YES error: nil];
+      [[UIApplication sharedApplication] beginReceivingRemoteControlEvents];
+      if (_pipController) {
+            _pipController = nil;
+        }
+      if (self._playerLayer) {
+          _pipController = [[AVPictureInPictureController alloc] initWithPlayerLayer:self._playerLayer];
+          _pipController.delegate = self;
+      }
+      dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.2 * NSEC_PER_SEC)),
+                       dispatch_get_main_queue(), ^{
+            [self setPictureInPicture:true];
+        });
+    } else {
+        // Fallback on earlier versions
+    }
+}
+
+- (void)usePlayerLayer: (CGRect) frame
+{
+    if( _player )
+    {
+        // Create new controller passing reference to the AVPlayerLayer
+        self._playerLayer = [AVPlayerLayer playerLayerWithPlayer:_player];
+        UIViewController* vc = [[[UIApplication sharedApplication] keyWindow] rootViewController];
+        self._playerLayer.frame = frame;
+        
+        self._playerLayer.needsDisplayOnBoundsChange = YES;
+        //[self._playerLayer addObserver:self forKeyPath:readyForDisplayKeyPath options:NSKeyValueObservingOptionNew context:nil];
+        [vc.view.layer addSublayer:self._playerLayer];
+        vc.view.layer.needsDisplayOnBoundsChange = YES;
+        
+        [self setupPipController];
+        
+    }
+}
+
+- (void)removePlayerLayer
+{
+  [self._playerLayer removeFromSuperlayer];
+//  if (_playerLayerObserverSet) {
+//    [self._playerLayer removeObserver:self forKeyPath:readyForDisplayKeyPath];
+//    _playerLayerObserverSet = NO;
+//  }
+    self._playerLayer = nil;
+    
+}
+#endif
+
+// #if TARGET_OS_IOS //TODO
+- (void)pictureInPictureControllerDidStopPictureInPicture:(AVPictureInPictureController *)pictureInPictureController  API_AVAILABLE(ios(9.0)){
+    [self removePlayerLayer];
+    if (_eventSink != nil) {
+      _eventSink(@{@"event" : @"stoppedPiP"});
+    }
+    bool isPlaying = self.player.rate != 0 && self.player.error == nil;
+    if (isPlaying) {
+        // 
+        if (_eventSink != nil) {
+          _eventSink(@{@"event" : @"expandButtonTapPiP"});
+        }
+    } else {
+        // close PIP button
+        _isPlaying = false;
+        [self updatePlayingState];
+        if (_eventSink != nil) {
+          _eventSink(@{@"event" : @"closeButtonTapPiP"});
+        }
+    }
+}
+
+- (void)pictureInPictureControllerDidStartPictureInPicture:(AVPictureInPictureController *)pictureInPictureController  API_AVAILABLE(ios(9.0)){
+    if (_eventSink != nil) {
+      _eventSink(@{@"event" : @"startingPiP"});
+    }
+    [self updatePlayingState];
+}
+
+- (void)pictureInPictureControllerWillStopPictureInPicture:(AVPictureInPictureController *)pictureInPictureController  API_AVAILABLE(ios(9.0)){
+
+}
+
+- (void)pictureInPictureControllerWillStartPictureInPicture:(AVPictureInPictureController *)pictureInPictureController {
+
+}
+
+- (void)pictureInPictureController:(AVPictureInPictureController *)pictureInPictureController failedToStartPictureInPictureWithError:(NSError *)error {
+
+}
+
+- (void)pictureInPictureController:(AVPictureInPictureController *)pictureInPictureController restoreUserInterfaceForPictureInPictureStopWithCompletionHandler:(void (^)(BOOL))completionHandler {
+    [self setRestoreUserInterfaceForPIPStopCompletionHandler: true];
+}
+// #endif //TODO
 
 - (CVPixelBufferRef)copyPixelBuffer {
   CMTime outputItemTime = [_videoOutput itemTimeForHostTime:CACurrentMediaTime()];
@@ -615,6 +767,7 @@ NS_INLINE CGFloat radiansToDegrees(CGFloat radians) {
 - (void)seekTo:(FLTPositionMessage *)input error:(FlutterError **)error {
   FLTVideoPlayer *player = self.playersByTextureId[input.textureId];
   [player seekTo:input.position.intValue];
+  
   [self.registry textureFrameAvailable:input.textureId.intValue];
 }
 
@@ -633,5 +786,17 @@ NS_INLINE CGFloat radiansToDegrees(CGFloat radians) {
     [[AVAudioSession sharedInstance] setCategory:AVAudioSessionCategoryPlayback error:nil];
   }
 }
+
+- (void)setPictureInPicture:(FLTPictureInPictureMessage*)input error:(FlutterError**)error {
+  FLTVideoPlayer* player = _players[input.textureId];
+  
+    if (input.enabled.intValue == 1) {
+        [player usePlayerLayer: CGRectMake(input.left.floatValue, input.top.floatValue,
+                                           input.width.floatValue, input.height.floatValue)];
+    } else {
+        [player setPictureInPicture:false];
+    }
+}
+
 
 @end

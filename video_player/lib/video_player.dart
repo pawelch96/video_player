@@ -46,10 +46,10 @@ class VideoPlayerValue {
     this.isPlaying = false,
     this.isLooping = false,
     this.isBuffering = false,
+    this.isShowingPIP = false,
     this.volume = 1.0,
     this.playbackSpeed = 1.0,
     this.errorDescription,
-    this.isPip = false,
   });
 
   /// Returns an instance for a video that hasn't been loaded.
@@ -98,6 +98,9 @@ class VideoPlayerValue {
   /// True if the video is currently buffering.
   final bool isBuffering;
 
+  /// True if the video is currently showing PIP.
+  final bool isShowingPIP;
+
   /// The current volume of the playback.
   final double volume;
 
@@ -111,24 +114,6 @@ class VideoPlayerValue {
 
   /// The [size] of the currently loaded video.
   final Size size;
-
-  ///Is in Picture in Picture Mode
-  final bool isPip;
-
-  ///Was Picture in Picture opened.
-  bool wasInPipMode = false;
-
-  ///Was player in fullscreen before Picture in Picture opened.
-  bool wasInFullScreenBeforePiP = false;
-
-  ///Was controls enabled before Picture in Picture opened.
-  bool wasControlsEnabledBeforePiP = false;
-
-  ///GlobalKey of the VideoPlayer widget
-  GlobalKey? _videoPlayerGlobalKey;
-
-  ///Getter of the GlobalKey
-  GlobalKey? get videoPlayerGlobalKey => _videoPlayerGlobalKey;
 
   /// Indicates whether or not the video has been loaded and is ready to play.
   final bool isInitialized;
@@ -167,10 +152,10 @@ class VideoPlayerValue {
     bool? isPlaying,
     bool? isLooping,
     bool? isBuffering,
+    bool? isShowingPIP,
     double? volume,
     double? playbackSpeed,
     String? errorDescription = _defaultErrorDescription,
-    bool? isPip,
   }) {
     return VideoPlayerValue(
       duration: duration ?? this.duration,
@@ -183,12 +168,12 @@ class VideoPlayerValue {
       isPlaying: isPlaying ?? this.isPlaying,
       isLooping: isLooping ?? this.isLooping,
       isBuffering: isBuffering ?? this.isBuffering,
+      isShowingPIP: isShowingPIP ?? this.isShowingPIP,
       volume: volume ?? this.volume,
       playbackSpeed: playbackSpeed ?? this.playbackSpeed,
       errorDescription: errorDescription != _defaultErrorDescription
           ? errorDescription
           : this.errorDescription,
-      isPip: isPip ?? this.isPip,
     );
   }
 
@@ -205,6 +190,7 @@ class VideoPlayerValue {
         'isPlaying: $isPlaying, '
         'isLooping: $isLooping, '
         'isBuffering: $isBuffering, '
+        'isShowingPIP: $isShowingPIP, '
         'volume: $volume, '
         'playbackSpeed: $playbackSpeed, '
         'errorDescription: $errorDescription)';
@@ -413,11 +399,20 @@ class VideoPlayerController extends ValueNotifier<VideoPlayerValue> {
         case VideoEventType.bufferingEnd:
           value = value.copyWith(isBuffering: false);
           break;
-        case VideoEventType.pipStart:
-          value = value.copyWith(isPip: true);
+        case VideoEventType.startingPiP:
+          value = value.copyWith(isShowingPIP: true);
           break;
-        case VideoEventType.pipStop:
-          value = value.copyWith(isPip: false);
+        case VideoEventType.stoppedPiP:
+          value = value.copyWith(isShowingPIP: false);
+          break;
+        case VideoEventType.expandButtonTapPiP:
+          value = value.copyWith(isBuffering: false);
+          break;
+        case VideoEventType.closeButtonTapPiP:
+          value = value.copyWith(
+            isPlaying: false,
+            isBuffering: false,
+          );
           break;
         case VideoEventType.unknown:
           break;
@@ -487,68 +482,6 @@ class VideoPlayerController extends ValueNotifier<VideoPlayerValue> {
     await _applyPlayPause();
   }
 
-  ///Enable Picture in Picture (PiP) mode. [videoPlayerGlobalKey] is required
-  ///to open PiP mode in iOS. When device is not supported, PiP mode won't be
-  ///open.
-  Future<void>? enablePictureInPicture(GlobalKey videoPlayerGlobalKey) async {
-    final bool isPipSupported = (await _isPictureInPictureSupported()) ?? false;
-
-    if (isPipSupported) {
-      // value.wasInFullScreenBeforePiP = value.isFullScreen;
-      // _wasControlsEnabledBeforePiP = _controlsEnabled;
-      // setControlsEnabled(false);
-      if (Platform.isAndroid) {
-        // _wasInFullScreenBeforePiP = _isFullScreen;
-        // await videoPlayerController?.enablePictureInPicture(
-        //     left: 0, top: 0, width: 0, height: 0);
-        // enterFullScreen();
-        // _postEvent(BetterPlayerEvent(BetterPlayerEventType.pipStart));
-        // return;
-      }
-      if (Platform.isIOS) {
-        final RenderBox? renderBox = videoPlayerGlobalKey.currentContext!
-            .findRenderObject() as RenderBox?;
-        if (renderBox == null) {
-          print(
-              "Can't show PiP. RenderBox is null. Did you provide valid global"
-              " key?");
-          return;
-        }
-        final Offset position = renderBox.localToGlobal(Offset.zero);
-        return _enablePictureInPicture(
-          left: position.dx,
-          top: position.dy,
-          width: renderBox.size.width,
-          height: renderBox.size.height,
-        );
-      } else {
-        print("Unsupported PiP in current platform.");
-      }
-    } else {
-      print("Picture in picture is not supported in this device. If you're "
-          "using Android, please check if you're using activity v2 "
-          "embedding.");
-    }
-  }
-
-  ///Disable Picture in Picture mode if it's enabled.
-  Future<void>? disablePictureInPicture() {
-    return _disablePictureInPicture();
-  }
-
-  // ignore: use_setters_to_change_properties
-  ///Set GlobalKey of VideoPlayer. Used in PiP methods called from controls.
-  void setBetterPlayerGlobalKey(GlobalKey videoPlayerGlobalKey) {
-    value._videoPlayerGlobalKey = videoPlayerGlobalKey;
-  }
-
-  ///Check if picture in picture mode is supported in this device.
-  Future<bool> isPictureInPictureSupported() async {
-    final bool isPipSupported = (await _isPictureInPictureSupported()) ?? false;
-
-    return isPipSupported;
-  }
-
   Future<void> _applyLooping() async {
     if (_isDisposedOrNotInitialized) {
       return;
@@ -594,6 +527,16 @@ class VideoPlayerController extends ValueNotifier<VideoPlayerValue> {
       return;
     }
     await _videoPlayerPlatform.setVolume(_textureId, value.volume);
+  }
+
+  Future<void> _setPictureInPicture(bool enabled, double left, double top,
+      double width, double height) async {
+    if (!value.isInitialized || _isDisposed) {
+      return;
+    }
+    value = value.copyWith(isShowingPIP: enabled);
+    await _videoPlayerPlatform.setPictureInPicture(
+        _textureId, enabled, left, top, width, height);
   }
 
   Future<void> _applyPlaybackSpeed() async {
@@ -751,22 +694,20 @@ class VideoPlayerController extends ValueNotifier<VideoPlayerValue> {
     );
   }
 
-  Future<void> _enablePictureInPicture(
-      {double? top, double? left, double? width, double? height}) async {
-    await _videoPlayerPlatform.enablePictureInPicture(
-        textureId, top, left, width, height);
-  }
-
-  Future<void> _disablePictureInPicture() async {
-    await _videoPlayerPlatform.disablePictureInPicture(textureId);
-  }
-
-  Future<bool?> _isPictureInPictureSupported() async {
-    if (_textureId == VideoPlayerController.kUninitializedTextureId) {
-      //TODO check if texture id is set correctly
-      return false;
-    }
-    return _videoPlayerPlatform.isPictureInPictureEnabled(_textureId);
+  Future<void> setPIP(
+    bool enabled, {
+    double left = 0.0,
+    double top = 0.0,
+    double width = 0.0,
+    double height = 0.0,
+  }) async {
+    await _setPictureInPicture(
+      enabled,
+      left,
+      top,
+      width,
+      height,
+    );
   }
 
   @override
@@ -785,6 +726,7 @@ class _VideoAppLifeCycleObserver extends Object with WidgetsBindingObserver {
   _VideoAppLifeCycleObserver(this._controller);
 
   bool _wasPlayingBeforePause = false;
+  bool _showingPip = false;
   final VideoPlayerController _controller;
 
   void initialize() {
@@ -796,7 +738,10 @@ class _VideoAppLifeCycleObserver extends Object with WidgetsBindingObserver {
     switch (state) {
       case AppLifecycleState.paused:
         _wasPlayingBeforePause = _controller.value.isPlaying;
-        _controller.pause();
+        _showingPip = _controller.value.isShowingPIP;
+        if (!_showingPip) {
+          _controller.pause();
+        }
         break;
       case AppLifecycleState.resumed:
         if (_wasPlayingBeforePause) {
@@ -828,23 +773,26 @@ class VideoPlayer extends StatefulWidget {
 class _VideoPlayerState extends State<VideoPlayer> {
   _VideoPlayerState() {
     _listener = () {
-      final int newTextureId = widget.controller.textureId;
-      if (newTextureId != _textureId) {
+      final int _newTextureId = widget.controller.textureId;
+      final bool _newEnabledVideo = !widget.controller.value.isShowingPIP;
+      if (_newTextureId != _textureId || _newEnabledVideo != _enabledVideo) {
         setState(() {
-          _textureId = newTextureId;
+          _textureId = _newTextureId;
+          _enabledVideo = _newEnabledVideo;
         });
       }
     };
   }
 
   late VoidCallback _listener;
-
   late int _textureId;
+  late bool _enabledVideo;
 
   @override
   void initState() {
     super.initState();
     _textureId = widget.controller.textureId;
+    _enabledVideo = (!widget.controller.value.isShowingPIP);
     // Need to listen for initialization events since the actual texture ID
     // becomes available after asynchronous initialization finishes.
     widget.controller.addListener(_listener);
@@ -855,6 +803,7 @@ class _VideoPlayerState extends State<VideoPlayer> {
     super.didUpdateWidget(oldWidget);
     oldWidget.controller.removeListener(_listener);
     _textureId = widget.controller.textureId;
+    _enabledVideo = (!widget.controller.value.isShowingPIP);
     widget.controller.addListener(_listener);
   }
 
@@ -866,7 +815,8 @@ class _VideoPlayerState extends State<VideoPlayer> {
 
   @override
   Widget build(BuildContext context) {
-    return _textureId == VideoPlayerController.kUninitializedTextureId
+    return _textureId == VideoPlayerController.kUninitializedTextureId ||
+            !_enabledVideo
         ? Container()
         : _videoPlayerPlatform.buildView(_textureId);
   }
