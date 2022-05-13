@@ -15,50 +15,58 @@
 #error Code Requires ARC.
 #endif
 
+int64_t FLTCMTimeToMillis(CMTime time) {
+  if (time.timescale == 0) return 0;
+  return time.value * 1000 / time.timescale;
+}
+
 @interface FLTFrameUpdater : NSObject
 @property(nonatomic) int64_t textureId;
-@property(nonatomic, weak, readonly) NSObject<FlutterTextureRegistry> *registry;
-- (void)onDisplayLink:(CADisplayLink *)link;
+@property(nonatomic, weak, readonly) NSObject<FlutterTextureRegistry>* registry;
+- (void)onDisplayLink:(CADisplayLink*)link;
 @end
 
 @implementation FLTFrameUpdater
-- (FLTFrameUpdater *)initWithRegistry:(NSObject<FlutterTextureRegistry> *)registry {
+- (FLTFrameUpdater*)initWithRegistry:(NSObject<FlutterTextureRegistry>*)registry {
   NSAssert(self, @"super init cannot be nil");
   if (self == nil) return nil;
   _registry = registry;
   return self;
 }
 
-- (void)onDisplayLink:(CADisplayLink *)link {
+- (void)onDisplayLink:(CADisplayLink*)link {
   [_registry textureFrameAvailable:_textureId];
 }
 @end
 
 @interface FLTVideoPlayer : NSObject <FlutterTexture, FlutterStreamHandler, AVPictureInPictureControllerDelegate>
-@property(readonly, nonatomic) AVPlayer *player;
-@property(readonly, nonatomic) AVPlayerItemVideoOutput *videoOutput;
-@property(readonly, nonatomic) CADisplayLink *displayLink;
-@property(nonatomic) FlutterEventChannel *eventChannel;
+@property(readonly, nonatomic) AVPlayer* player;
+@property(readonly, nonatomic) AVPlayerItemVideoOutput* videoOutput;
+@property(readonly, nonatomic) CADisplayLink* displayLink;
+@property(nonatomic) FlutterEventChannel* eventChannel;
 @property(nonatomic) FlutterEventSink eventSink;
 @property(nonatomic) CGAffineTransform preferredTransform;
-@property(nonatomic, readonly) BOOL disposed;
-@property(nonatomic, readonly) BOOL isPlaying;
-@property(nonatomic) BOOL isLooping;
-@property(nonatomic, readonly) BOOL isInitialized;
+@property(nonatomic, readonly) bool disposed;
+@property(nonatomic, readonly) bool isPlaying;
+@property(nonatomic) bool isLooping;
+@property(nonatomic, readonly) bool isInitialized;
 @property(nonatomic) AVPlayerLayer* _playerLayer;
 @property(nonatomic) bool _pictureInPicture;
-- (instancetype)initWithURL:(NSURL *)url
-               frameUpdater:(FLTFrameUpdater *)frameUpdater
-                httpHeaders:(nonnull NSDictionary<NSString *, NSString *> *)headers;
+
+- (instancetype)initWithURL:(NSURL*)url frameUpdater:(FLTFrameUpdater*)frameUpdater;
+- (void)play;
+- (void)pause;
+- (void)setIsLooping:(bool)isLooping;
+- (void)updatePlayingState;
 @end
 
-static void *timeRangeContext = &timeRangeContext;
-static void *statusContext = &statusContext;
+static void* timeRangeContext = &timeRangeContext;
+static void* statusContext = &statusContext;
 static void *presentationSizeContext = &presentationSizeContext;
 static void *durationContext = &durationContext;
-static void *playbackLikelyToKeepUpContext = &playbackLikelyToKeepUpContext;
-static void *playbackBufferEmptyContext = &playbackBufferEmptyContext;
-static void *playbackBufferFullContext = &playbackBufferFullContext;
+static void* playbackLikelyToKeepUpContext = &playbackLikelyToKeepUpContext;
+static void* playbackBufferEmptyContext = &playbackBufferEmptyContext;
+static void* playbackBufferFullContext = &playbackBufferFullContext;
 
 static NSString *const readyForDisplayKeyPath = @"readyForDisplay";
 
@@ -70,12 +78,12 @@ AVPictureInPictureController *_pipController;
 
 
 @implementation FLTVideoPlayer
-- (instancetype)initWithAsset:(NSString *)asset frameUpdater:(FLTFrameUpdater *)frameUpdater {
-  NSString *path = [[NSBundle mainBundle] pathForResource:asset ofType:nil];
-  return [self initWithURL:[NSURL fileURLWithPath:path] frameUpdater:frameUpdater httpHeaders:@{}];
+- (instancetype)initWithAsset:(NSString*)asset frameUpdater:(FLTFrameUpdater*)frameUpdater {
+  NSString* path = [[NSBundle mainBundle] pathForResource:asset ofType:nil];
+  return [self initWithURL:[NSURL fileURLWithPath:path] frameUpdater:frameUpdater];
 }
 
-- (void)addObservers:(AVPlayerItem *)item {
+- (void)addObservers:(AVPlayerItem*)item {
   [item addObserver:self
          forKeyPath:@"loadedTimeRanges"
             options:NSKeyValueObservingOptionInitial | NSKeyValueObservingOptionNew
@@ -85,13 +93,13 @@ AVPictureInPictureController *_pipController;
             options:NSKeyValueObservingOptionInitial | NSKeyValueObservingOptionNew
             context:statusContext];
   [item addObserver:self
-         forKeyPath:@"presentationSize"
-            options:NSKeyValueObservingOptionInitial | NSKeyValueObservingOptionNew
-            context:presentationSizeContext];
+             forKeyPath:@"presentationSize"
+                options:NSKeyValueObservingOptionInitial | NSKeyValueObservingOptionNew
+                context:presentationSizeContext];
   [item addObserver:self
-         forKeyPath:@"duration"
-            options:NSKeyValueObservingOptionInitial | NSKeyValueObservingOptionNew
-            context:durationContext];
+             forKeyPath:@"duration"
+                options:NSKeyValueObservingOptionInitial | NSKeyValueObservingOptionNew
+                context:durationContext];
   [item addObserver:self
          forKeyPath:@"playbackLikelyToKeepUp"
             options:NSKeyValueObservingOptionInitial | NSKeyValueObservingOptionNew
@@ -112,52 +120,42 @@ AVPictureInPictureController *_pipController;
                                              object:item];
 }
 
-- (void)itemDidPlayToEndTime:(NSNotification *)notification {
-  if (_isLooping) {
-    AVPlayerItem *p = [notification object];
-    [p seekToTime:kCMTimeZero completionHandler:nil];
-  } else {
-    if (_eventSink) {
-      _eventSink(@{@"event" : @"completed"});
+- (void)itemDidPlayToEndTime:(NSNotification*)notification {
+    if (_isLooping) {
+        AVPlayerItem* p = [notification object];
+        [p seekToTime:kCMTimeZero completionHandler:nil];
+    } else {
+        if (_eventSink) {
+            _eventSink(@{@"event" : @"completed"});
+        }
     }
-  }
-  // Remove PIP
-  [self setPictureInPicture:false];
+    // Remove PIP
+    [self setPictureInPicture:false];
 }
 
-const int64_t TIME_UNSET = -9223372036854775807;
-
-NS_INLINE int64_t FLTCMTimeToMillis(CMTime time) {
-  // When CMTIME_IS_INDEFINITE return a value that matches TIME_UNSET from ExoPlayer2 on Android.
-  // Fixes https://github.com/flutter/flutter/issues/48670
-  if (CMTIME_IS_INDEFINITE(time)) return TIME_UNSET;
-  if (time.timescale == 0) return 0;
-  return time.value * 1000 / time.timescale;
-}
-
-NS_INLINE CGFloat radiansToDegrees(CGFloat radians) {
+static inline CGFloat radiansToDegrees(CGFloat radians) {
   // Input range [-pi, pi] or [-180, 180]
   CGFloat degrees = GLKMathRadiansToDegrees((float)radians);
   if (degrees < 0) {
     // Convert -90 to 270 and -180 to 180
     return degrees + 360;
   }
-  // Output degrees in between [0, 360]
+  // Output degrees in between [0, 360[
   return degrees;
 };
 
-- (AVMutableVideoComposition *)getVideoCompositionWithTransform:(CGAffineTransform)transform
-                                                      withAsset:(AVAsset *)asset
-                                                 withVideoTrack:(AVAssetTrack *)videoTrack {
-  AVMutableVideoCompositionInstruction *instruction =
+- (AVMutableVideoComposition*)getVideoCompositionWithTransform:(CGAffineTransform)transform
+                                                     withAsset:(AVAsset*)asset
+                                                withVideoTrack:(AVAssetTrack*)videoTrack {
+  AVMutableVideoCompositionInstruction* instruction =
       [AVMutableVideoCompositionInstruction videoCompositionInstruction];
   instruction.timeRange = CMTimeRangeMake(kCMTimeZero, [asset duration]);
-  AVMutableVideoCompositionLayerInstruction *layerInstruction =
+  AVMutableVideoCompositionLayerInstruction* layerInstruction =
       [AVMutableVideoCompositionLayerInstruction
           videoCompositionLayerInstructionWithAssetTrack:videoTrack];
   [layerInstruction setTransform:_preferredTransform atTime:kCMTimeZero];
 
-  AVMutableVideoComposition *videoComposition = [AVMutableVideoComposition videoComposition];
+  AVMutableVideoComposition* videoComposition = [AVMutableVideoComposition videoComposition];
   instruction.layerInstructions = @[ layerInstruction ];
   videoComposition.instructions = @[ instruction ];
 
@@ -179,8 +177,8 @@ NS_INLINE CGFloat radiansToDegrees(CGFloat radians) {
   return videoComposition;
 }
 
-- (void)createVideoOutputAndDisplayLink:(FLTFrameUpdater *)frameUpdater {
-  NSDictionary *pixBuffAttributes = @{
+- (void)createVideoOutputAndDisplayLink:(FLTFrameUpdater*)frameUpdater {
+  NSDictionary* pixBuffAttributes = @{
     (id)kCVPixelBufferPixelFormatTypeKey : @(kCVPixelFormatType_32BGRA),
     (id)kCVPixelBufferIOSurfacePropertiesKey : @{}
   };
@@ -192,40 +190,58 @@ NS_INLINE CGFloat radiansToDegrees(CGFloat radians) {
   _displayLink.paused = YES;
 }
 
-- (instancetype)initWithURL:(NSURL *)url
-               frameUpdater:(FLTFrameUpdater *)frameUpdater
-                httpHeaders:(nonnull NSDictionary<NSString *, NSString *> *)headers {
-  NSDictionary<NSString *, id> *options = nil;
-  if ([headers count] != 0) {
-    options = @{@"AVURLAssetHTTPHeaderFieldsKey" : headers};
-  }
-  AVURLAsset *urlAsset = [AVURLAsset URLAssetWithURL:url options:options];
-  AVPlayerItem *item = [AVPlayerItem playerItemWithAsset:urlAsset];
+- (instancetype)initWithURL:(NSURL*)url frameUpdater:(FLTFrameUpdater*)frameUpdater {
+  AVPlayerItem* item = [AVPlayerItem playerItemWithURL:url];
   return [self initWithPlayerItem:item frameUpdater:frameUpdater];
 }
 
-- (instancetype)initWithPlayerItem:(AVPlayerItem *)item
-                      frameUpdater:(FLTFrameUpdater *)frameUpdater {
+- (CGAffineTransform)fixTransform:(AVAssetTrack*)videoTrack {
+  CGAffineTransform transform = videoTrack.preferredTransform;
+  // TODO(@recastrodiaz): why do we need to do this? Why is the preferredTransform incorrect?
+  // At least 2 user videos show a black screen when in portrait mode if we directly use the
+  // videoTrack.preferredTransform Setting tx to the height of the video instead of 0, properly
+  // displays the video https://github.com/flutter/flutter/issues/17606#issuecomment-413473181
+  if (transform.tx == 0 && transform.ty == 0) {
+    NSInteger rotationDegrees = (NSInteger)round(radiansToDegrees(atan2(transform.b, transform.a)));
+    NSLog(@"TX and TY are 0. Rotation: %ld. Natural width,height: %f, %f", (long)rotationDegrees,
+          videoTrack.naturalSize.width, videoTrack.naturalSize.height);
+    if (rotationDegrees == 90) {
+      NSLog(@"Setting transform tx");
+      transform.tx = videoTrack.naturalSize.height;
+      transform.ty = 0;
+    } else if (rotationDegrees == 270) {
+      NSLog(@"Setting transform ty");
+      transform.tx = 0;
+      transform.ty = videoTrack.naturalSize.width;
+    }
+  }
+  return transform;
+}
+
+- (instancetype)initWithPlayerItem:(AVPlayerItem*)item frameUpdater:(FLTFrameUpdater*)frameUpdater {
   self = [super init];
   NSAssert(self, @"super init cannot be nil");
+  _isInitialized = false;
+  _isPlaying = false;
+  _disposed = false;
 
-  AVAsset *asset = [item asset];
+  AVAsset* asset = [item asset];
   void (^assetCompletionHandler)(void) = ^{
     if ([asset statusOfValueForKey:@"tracks" error:nil] == AVKeyValueStatusLoaded) {
-      NSArray *tracks = [asset tracksWithMediaType:AVMediaTypeVideo];
+      NSArray* tracks = [asset tracksWithMediaType:AVMediaTypeVideo];
       if ([tracks count] > 0) {
-        AVAssetTrack *videoTrack = tracks[0];
+        AVAssetTrack* videoTrack = tracks[0];
         void (^trackCompletionHandler)(void) = ^{
           if (self->_disposed) return;
           if ([videoTrack statusOfValueForKey:@"preferredTransform"
                                         error:nil] == AVKeyValueStatusLoaded) {
             // Rotate the video by using a videoComposition and the preferredTransform
-            self->_preferredTransform = FLTGetStandardizedTransformForTrack(videoTrack);
+            self->_preferredTransform = [self fixTransform:videoTrack];
             // Note:
             // https://developer.apple.com/documentation/avfoundation/avplayeritem/1388818-videocomposition
             // Video composition can only be used with file-based media and is not supported for
             // use with media served using HTTP Live Streaming.
-            AVMutableVideoComposition *videoComposition =
+            AVMutableVideoComposition* videoComposition =
                 [self getVideoCompositionWithTransform:self->_preferredTransform
                                              withAsset:asset
                                         withVideoTrack:videoTrack];
@@ -240,6 +256,7 @@ NS_INLINE CGFloat radiansToDegrees(CGFloat radians) {
 
   _player = [AVPlayer playerWithPlayerItem:item];
   _player.actionAtItemEnd = AVPlayerActionAtItemEndNone;
+  // Fix start delay: https://stackoverflow.com/questions/39703808/avplayer-starts-to-reproduce-a-video-after-a-long-delay
   _player.automaticallyWaitsToMinimizeStalling = false;
 
   [self createVideoOutputAndDisplayLink:frameUpdater];
@@ -248,17 +265,18 @@ NS_INLINE CGFloat radiansToDegrees(CGFloat radians) {
 
   [asset loadValuesAsynchronouslyForKeys:@[ @"tracks" ] completionHandler:assetCompletionHandler];
 
+
   return self;
 }
 
-- (void)observeValueForKeyPath:(NSString *)path
+- (void)observeValueForKeyPath:(NSString*)path
                       ofObject:(id)object
-                        change:(NSDictionary *)change
-                       context:(void *)context {
+                        change:(NSDictionary*)change
+                       context:(void*)context {
   if (context == timeRangeContext) {
     if (_eventSink != nil) {
-      NSMutableArray<NSArray<NSNumber *> *> *values = [[NSMutableArray alloc] init];
-      for (NSValue *rangeValue in [object loadedTimeRanges]) {
+      NSMutableArray<NSArray<NSNumber*>*>* values = [[NSMutableArray alloc] init];
+      for (NSValue* rangeValue in [object loadedTimeRanges]) {
         CMTimeRange range = [rangeValue CMTimeRangeValue];
         int64_t start = FLTCMTimeToMillis(range.start);
         [values addObject:@[ @(start), @(start + FLTCMTimeToMillis(range.duration)) ]];
@@ -266,7 +284,7 @@ NS_INLINE CGFloat radiansToDegrees(CGFloat radians) {
       _eventSink(@{@"event" : @"bufferingUpdate", @"values" : values});
     }
   } else if (context == statusContext) {
-    AVPlayerItem *item = (AVPlayerItem *)object;
+    AVPlayerItem* item = (AVPlayerItem*)object;
     switch (item.status) {
       case AVPlayerItemStatusFailed:
         if (_eventSink != nil) {
@@ -286,15 +304,15 @@ NS_INLINE CGFloat radiansToDegrees(CGFloat radians) {
         break;
     }
   } else if (context == presentationSizeContext || context == durationContext) {
-    AVPlayerItem *item = (AVPlayerItem *)object;
-    if (item.status == AVPlayerItemStatusReadyToPlay) {
-      // Due to an apparent bug, when the player item is ready, it still may not have determined
-      // its presentation size or duration. When these properties are finally set, re-check if
-      // all required properties and instantiate the event sink if it is not already set up.
-      [self setupEventSinkIfReadyToPlay];
-      [self updatePlayingState];
-    }
-  } else if (context == playbackLikelyToKeepUpContext) {
+      AVPlayerItem *item = (AVPlayerItem *)object;
+      if (item.status == AVPlayerItemStatusReadyToPlay) {
+        // Due to an apparent bug, when the player item is ready, it still may not have determined
+        // its presentation size or duration. When these properties are finally set, re-check if
+        // all required properties and instantiate the event sink if it is not already set up.
+        [self setupEventSinkIfReadyToPlay];
+        [self updatePlayingState];
+      }
+    } else if (context == playbackLikelyToKeepUpContext) {
     if ([[_player currentItem] isPlaybackLikelyToKeepUp]) {
       [self updatePlayingState];
       if (_eventSink != nil) {
@@ -324,6 +342,31 @@ NS_INLINE CGFloat radiansToDegrees(CGFloat radians) {
   _displayLink.paused = !_isPlaying;
 }
 
+//- (void)sendInitialized {
+//  if (_eventSink && !_isInitialized) {
+//    CGSize size = [self.player currentItem].presentationSize;
+//    CGFloat width = size.width;
+//    CGFloat height = size.height;
+//
+//    // The player has not yet initialized.
+//    if (height == CGSizeZero.height && width == CGSizeZero.width) {
+//      return;
+//    }
+//    // The player may be initialized but still needs to determine the duration.
+//    if ([self duration] == 0) {
+//      return;
+//    }
+//
+//    _isInitialized = true;
+//    _eventSink(@{
+//      @"event" : @"initialized",
+//      @"duration" : @([self duration]),
+//      @"width" : @(width),
+//      @"height" : @(height)
+//    });
+//  }
+//}
+
 - (void)setupEventSinkIfReadyToPlay {
   if (_eventSink && !_isInitialized) {
     AVPlayerItem *currentItem = self.player.currentItem;
@@ -339,9 +382,8 @@ NS_INLINE CGFloat radiansToDegrees(CGFloat radians) {
           // Cancelled, or something failed.
           return;
         }
-        // This completion block will run on an AVFoundation background queue.
-        // Hop back to the main thread to set up event sink.
-        //[self performSelector:_cmd onThread:NSThread.mainThread withObject:self waitUntilDone:NO];//TODO check
+        // This completion block will run on an unknown AVFoundation completion
+        // queue thread. Hop back to the main thread to set up event sink.
         if (!NSThread.isMainThread) {
           [self performSelector:_cmd onThread:NSThread.mainThread withObject:self waitUntilDone:NO];
         } else {
@@ -354,13 +396,9 @@ NS_INLINE CGFloat radiansToDegrees(CGFloat radians) {
     }
 
     BOOL hasVideoTracks = [asset tracksWithMediaType:AVMediaTypeVideo].count != 0;
-    BOOL hasNoTracks = asset.tracks.count == 0;
 
-    // The player has not yet initialized when it has no size, unless it is an audio-only track.
-    // HLS m3u8 video files never load any tracks, and are also not yet initialized until they have
-    // a size.
-    if ((hasVideoTracks || hasNoTracks) && height == CGSizeZero.height &&
-        width == CGSizeZero.width) {
+    // The player has not yet initialized when it contains video tracks.
+    if (hasVideoTracks && height == CGSizeZero.height && width == CGSizeZero.width) {
       return;
     }
     // The player may be initialized but still needs to determine the duration.
@@ -369,7 +407,7 @@ NS_INLINE CGFloat radiansToDegrees(CGFloat radians) {
       return;
     }
 
-    _isInitialized = YES;
+    _isInitialized = true;
     _eventSink(@{
       @"event" : @"initialized",
       @"duration" : @(duration),
@@ -380,12 +418,12 @@ NS_INLINE CGFloat radiansToDegrees(CGFloat radians) {
 }
 
 - (void)play {
-  _isPlaying = YES;
+  _isPlaying = true;
   [self updatePlayingState];
 }
 
 - (void)pause {
-  _isPlaying = NO;
+  _isPlaying = false;
   [self updatePlayingState];
 }
 
@@ -394,22 +432,16 @@ NS_INLINE CGFloat radiansToDegrees(CGFloat radians) {
 }
 
 - (int64_t)duration {
-  // Note: https://openradar.appspot.com/radar?id=4968600712511488
-  // `[AVPlayerItem duration]` can be `kCMTimeIndefinite`,
-  // use `[[AVPlayerItem asset] duration]` instead.
-  return FLTCMTimeToMillis([[[_player currentItem] asset] duration]);
+  return FLTCMTimeToMillis([[_player currentItem] duration]);
 }
 
 - (void)seekTo:(int)location {
-  // TODO(stuartmorgan): Update this to use completionHandler: to only return
-  // once the seek operation is complete once the Pigeon API is updated to a
-  // version that handles async calls.
   [_player seekToTime:CMTimeMake(location, 1000)
       toleranceBefore:kCMTimeZero
        toleranceAfter:kCMTimeZero];
 }
 
-- (void)setIsLooping:(BOOL)isLooping {
+- (void)setIsLooping:(bool)isLooping {
   _isLooping = isLooping;
 }
 
@@ -443,10 +475,9 @@ NS_INLINE CGFloat radiansToDegrees(CGFloat radians) {
 
 - (void)setPictureInPicture:(BOOL)pictureInPicture
 {
-    // if (self._pictureInPicture == pictureInPicture) {
-    //     return;
-    // }
-
+//    if (self._pictureInPicture == pictureInPicture) {
+//        return;
+//    }
     self._pictureInPicture = pictureInPicture;
     if (@available(iOS 9.0, *)) {
         if (_pipController && self._pictureInPicture && ![_pipController isPictureInPictureActive]) {
@@ -473,21 +504,22 @@ NS_INLINE CGFloat radiansToDegrees(CGFloat radians) {
 
 - (void)setupPipController {
     if (@available(iOS 9.0, *)) {
-      if (![AVPictureInPictureController isPictureInPictureSupported]) {
-          // Fallback on earlier versions
-          return;
-      }
-      [[AVAudioSession sharedInstance] setCategory:AVAudioSessionCategoryPlayback error:nil];
-      [[AVAudioSession sharedInstance] setActive: YES error: nil];
-      [[UIApplication sharedApplication] beginReceivingRemoteControlEvents];
-      if (_pipController) {
+        if (![AVPictureInPictureController isPictureInPictureSupported]) {
+            // Fallback on earlier versions
+            return;
+        }
+
+        [[AVAudioSession sharedInstance] setCategory:AVAudioSessionCategoryPlayback error:nil];
+        [[AVAudioSession sharedInstance] setActive: YES error: nil];
+        [[UIApplication sharedApplication] beginReceivingRemoteControlEvents];
+        if (_pipController) {
             _pipController = nil;
         }
-      if (self._playerLayer) {
-          _pipController = [[AVPictureInPictureController alloc] initWithPlayerLayer:self._playerLayer];
-          _pipController.delegate = self;
-      }
-      dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.2 * NSEC_PER_SEC)),
+        if ( self._playerLayer )  {
+            _pipController = [[AVPictureInPictureController alloc] initWithPlayerLayer:self._playerLayer];
+            _pipController.delegate = self;
+        }
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.2 * NSEC_PER_SEC)),
                        dispatch_get_main_queue(), ^{
             [self setPictureInPicture:true];
         });
@@ -504,30 +536,29 @@ NS_INLINE CGFloat radiansToDegrees(CGFloat radians) {
         self._playerLayer = [AVPlayerLayer playerLayerWithPlayer:_player];
         UIViewController* vc = [[[UIApplication sharedApplication] keyWindow] rootViewController];
         self._playerLayer.frame = frame;
-        
         self._playerLayer.needsDisplayOnBoundsChange = YES;
-        //[self._playerLayer addObserver:self forKeyPath:readyForDisplayKeyPath options:NSKeyValueObservingOptionNew context:nil];
+        //  [self._playerLayer addObserver:self forKeyPath:readyForDisplayKeyPath options:NSKeyValueObservingOptionNew context:nil];
         [vc.view.layer addSublayer:self._playerLayer];
         vc.view.layer.needsDisplayOnBoundsChange = YES;
-        
+
         [self setupPipController];
-        
+
     }
 }
 
 - (void)removePlayerLayer
 {
-  [self._playerLayer removeFromSuperlayer];
-//  if (_playerLayerObserverSet) {
-//    [self._playerLayer removeObserver:self forKeyPath:readyForDisplayKeyPath];
-//    _playerLayerObserverSet = NO;
-//  }
+    [self._playerLayer removeFromSuperlayer];
+    //  if (_playerLayerObserverSet) {
+    //    [self._playerLayer removeObserver:self forKeyPath:readyForDisplayKeyPath];
+    //    _playerLayerObserverSet = NO;
+    //  }
+
     self._playerLayer = nil;
-    
 }
 #endif
 
-// #if TARGET_OS_IOS //TODO
+// #if TARGET_OS_IOS
 - (void)pictureInPictureControllerDidStopPictureInPicture:(AVPictureInPictureController *)pictureInPictureController  API_AVAILABLE(ios(9.0)){
     [self removePlayerLayer];
     if (_eventSink != nil) {
@@ -535,7 +566,7 @@ NS_INLINE CGFloat radiansToDegrees(CGFloat radians) {
     }
     bool isPlaying = self.player.rate != 0 && self.player.error == nil;
     if (isPlaying) {
-        // 
+        // expand PIP button
         if (_eventSink != nil) {
           _eventSink(@{@"event" : @"expandButtonTapPiP"});
         }
@@ -569,9 +600,11 @@ NS_INLINE CGFloat radiansToDegrees(CGFloat radians) {
 }
 
 - (void)pictureInPictureController:(AVPictureInPictureController *)pictureInPictureController restoreUserInterfaceForPictureInPictureStopWithCompletionHandler:(void (^)(BOOL))completionHandler {
-    [self setRestoreUserInterfaceForPIPStopCompletionHandler: true];
+//  NSAssert(_restoreUserInterfaceForPIPStopCompletionHandler == NULL, @"restoreUserInterfaceForPIPStopCompletionHandler was not called after picture in picture was exited.");
+  [self setRestoreUserInterfaceForPIPStopCompletionHandler: true];
 }
-// #endif //TODO
+// #endif
+
 
 - (CVPixelBufferRef)copyPixelBuffer {
   CMTime outputItemTime = [_videoOutput itemTimeForHostTime:CACurrentMediaTime()];
@@ -582,18 +615,18 @@ NS_INLINE CGFloat radiansToDegrees(CGFloat radians) {
   }
 }
 
-- (void)onTextureUnregistered:(NSObject<FlutterTexture> *)texture {
+- (void)onTextureUnregistered {
   dispatch_async(dispatch_get_main_queue(), ^{
     [self dispose];
   });
 }
 
-- (FlutterError *_Nullable)onCancelWithArguments:(id _Nullable)arguments {
+- (FlutterError* _Nullable)onCancelWithArguments:(id _Nullable)arguments {
   _eventSink = nil;
   return nil;
 }
 
-- (FlutterError *_Nullable)onListenWithArguments:(id _Nullable)arguments
+- (FlutterError* _Nullable)onListenWithArguments:(id _Nullable)arguments
                                        eventSink:(nonnull FlutterEventSink)events {
   _eventSink = events;
   // TODO(@recastrodiaz): remove the line below when the race condition is resolved:
@@ -609,18 +642,22 @@ NS_INLINE CGFloat radiansToDegrees(CGFloat radians) {
 /// is useful for the case where the Engine is in the process of deconstruction
 /// so the channel is going to die or is already dead.
 - (void)disposeSansEventChannel {
-  _disposed = YES;
+  _disposed = true;
   [_displayLink invalidate];
-  AVPlayerItem *currentItem = self.player.currentItem;
-  [currentItem removeObserver:self forKeyPath:@"status"];
-  [currentItem removeObserver:self forKeyPath:@"loadedTimeRanges"];
-  [currentItem removeObserver:self forKeyPath:@"presentationSize"];
-  [currentItem removeObserver:self forKeyPath:@"duration"];
-  [currentItem removeObserver:self forKeyPath:@"playbackLikelyToKeepUp"];
-  [currentItem removeObserver:self forKeyPath:@"playbackBufferEmpty"];
-  [currentItem removeObserver:self forKeyPath:@"playbackBufferFull"];
-
-  [self.player replaceCurrentItemWithPlayerItem:nil];
+  [[_player currentItem] removeObserver:self forKeyPath:@"status" context:statusContext];
+  [[_player currentItem] removeObserver:self
+                             forKeyPath:@"loadedTimeRanges"
+                                context:timeRangeContext];
+  [[_player currentItem] removeObserver:self
+                             forKeyPath:@"playbackLikelyToKeepUp"
+                                context:playbackLikelyToKeepUpContext];
+  [[_player currentItem] removeObserver:self
+                             forKeyPath:@"playbackBufferEmpty"
+                                context:playbackBufferEmptyContext];
+  [[_player currentItem] removeObserver:self
+                             forKeyPath:@"playbackBufferFull"
+                                context:playbackBufferFullContext];
+  [_player replaceCurrentItemWithPlayerItem:nil];
   [[NSNotificationCenter defaultCenter] removeObserver:self];
 }
 
@@ -631,74 +668,74 @@ NS_INLINE CGFloat radiansToDegrees(CGFloat radians) {
 
 @end
 
-@interface FLTVideoPlayerPlugin () <FLTAVFoundationVideoPlayerApi>
-@property(readonly, weak, nonatomic) NSObject<FlutterTextureRegistry> *registry;
-@property(readonly, weak, nonatomic) NSObject<FlutterBinaryMessenger> *messenger;
-@property(readonly, strong, nonatomic)
-    NSMutableDictionary<NSNumber *, FLTVideoPlayer *> *playersByTextureId;
-@property(readonly, strong, nonatomic) NSObject<FlutterPluginRegistrar> *registrar;
+@interface FLTVideoPlayerPlugin () <FLTVideoPlayerApi>
+@property(readonly, weak, nonatomic) NSObject<FlutterTextureRegistry>* registry;
+@property(readonly, weak, nonatomic) NSObject<FlutterBinaryMessenger>* messenger;
+@property(readonly, strong, nonatomic) NSMutableDictionary* players;
+@property(readonly, strong, nonatomic) NSObject<FlutterPluginRegistrar>* registrar;
 @end
 
 @implementation FLTVideoPlayerPlugin
-+ (void)registerWithRegistrar:(NSObject<FlutterPluginRegistrar> *)registrar {
-  FLTVideoPlayerPlugin *instance = [[FLTVideoPlayerPlugin alloc] initWithRegistrar:registrar];
++ (void)registerWithRegistrar:(NSObject<FlutterPluginRegistrar>*)registrar {
+  FLTVideoPlayerPlugin* instance = [[FLTVideoPlayerPlugin alloc] initWithRegistrar:registrar];
   [registrar publish:instance];
-  FLTAVFoundationVideoPlayerApiSetup(registrar.messenger, instance);
+  FLTVideoPlayerApiSetup(registrar.messenger, instance);
 }
 
-- (instancetype)initWithRegistrar:(NSObject<FlutterPluginRegistrar> *)registrar {
+- (instancetype)initWithRegistrar:(NSObject<FlutterPluginRegistrar>*)registrar {
   self = [super init];
   NSAssert(self, @"super init cannot be nil");
   _registry = [registrar textures];
   _messenger = [registrar messenger];
   _registrar = registrar;
-  _playersByTextureId = [NSMutableDictionary dictionaryWithCapacity:1];
+  _players = [NSMutableDictionary dictionaryWithCapacity:1];
   return self;
 }
 
-- (void)detachFromEngineForRegistrar:(NSObject<FlutterPluginRegistrar> *)registrar {
-  [self.playersByTextureId.allValues makeObjectsPerformSelector:@selector(disposeSansEventChannel)];
-  [self.playersByTextureId removeAllObjects];
+- (void)detachFromEngineForRegistrar:(NSObject<FlutterPluginRegistrar>*)registrar {
+  for (NSNumber* textureId in _players.allKeys) {
+    FLTVideoPlayer* player = _players[textureId];
+    [player disposeSansEventChannel];
+  }
+  [_players removeAllObjects];
   // TODO(57151): This should be commented out when 57151's fix lands on stable.
   // This is the correct behavior we never did it in the past and the engine
   // doesn't currently support it.
-  // FLTAVFoundationVideoPlayerApiSetup(registrar.messenger, nil);
+  // FLTVideoPlayerApiSetup(registrar.messenger, nil);
 }
 
-- (FLTTextureMessage *)onPlayerSetup:(FLTVideoPlayer *)player
-                        frameUpdater:(FLTFrameUpdater *)frameUpdater {
-  int64_t textureId = [self.registry registerTexture:player];
+- (FLTTextureMessage*)onPlayerSetup:(FLTVideoPlayer*)player
+                       frameUpdater:(FLTFrameUpdater*)frameUpdater {
+  int64_t textureId = [_registry registerTexture:player];
   frameUpdater.textureId = textureId;
-  FlutterEventChannel *eventChannel = [FlutterEventChannel
+  FlutterEventChannel* eventChannel = [FlutterEventChannel
       eventChannelWithName:[NSString stringWithFormat:@"flutter.io/videoPlayer/videoEvents%lld",
                                                       textureId]
            binaryMessenger:_messenger];
   [eventChannel setStreamHandler:player];
   player.eventChannel = eventChannel;
-  self.playersByTextureId[@(textureId)] = player;
-  // FLTTextureMessage *result = [FLTTextureMessage makeWithTextureId:@(textureId)];
+  _players[@(textureId)] = player;
   FLTTextureMessage* result = [[FLTTextureMessage alloc] init];
   result.textureId = @(textureId);
   return result;
 }
 
-- (void)initialize:(FlutterError *__autoreleasing *)error {
+- (void)initialize:(FlutterError* __autoreleasing*)error {
   // Allow audio playback when the Ring/Silent switch is set to silent
   [[AVAudioSession sharedInstance] setCategory:AVAudioSessionCategoryPlayback error:nil];
 
-  [self.playersByTextureId
-      enumerateKeysAndObjectsUsingBlock:^(NSNumber *textureId, FLTVideoPlayer *player, BOOL *stop) {
-        [self.registry unregisterTexture:textureId.unsignedIntegerValue];
-        [player dispose];
-      }];
-  [self.playersByTextureId removeAllObjects];
+  for (NSNumber* textureId in _players) {
+    [_registry unregisterTexture:[textureId unsignedIntegerValue]];
+    [_players[textureId] dispose];
+  }
+  [_players removeAllObjects];
 }
 
-- (FLTTextureMessage *)create:(FLTCreateMessage *)input error:(FlutterError **)error {
-  FLTFrameUpdater *frameUpdater = [[FLTFrameUpdater alloc] initWithRegistry:_registry];
-  FLTVideoPlayer *player;
+- (FLTTextureMessage*)create:(FLTCreateMessage*)input error:(FlutterError**)error {
+  FLTFrameUpdater* frameUpdater = [[FLTFrameUpdater alloc] initWithRegistry:_registry];
+  FLTVideoPlayer* player;
   if (input.asset) {
-    NSString *assetPath;
+    NSString* assetPath;
     if (input.packageName) {
       assetPath = [_registrar lookupKeyForAsset:input.asset fromPackage:input.packageName];
     } else {
@@ -708,8 +745,7 @@ NS_INLINE CGFloat radiansToDegrees(CGFloat radians) {
     return [self onPlayerSetup:player frameUpdater:frameUpdater];
   } else if (input.uri) {
     player = [[FLTVideoPlayer alloc] initWithURL:[NSURL URLWithString:input.uri]
-                                    frameUpdater:frameUpdater
-                                     httpHeaders:input.httpHeaders];
+                                    frameUpdater:frameUpdater];
     return [self onPlayerSetup:player frameUpdater:frameUpdater];
   } else {
     *error = [FlutterError errorWithCode:@"video_player" message:@"not implemented" details:nil];
@@ -717,10 +753,10 @@ NS_INLINE CGFloat radiansToDegrees(CGFloat radians) {
   }
 }
 
-- (void)dispose:(FLTTextureMessage *)input error:(FlutterError **)error {
-  FLTVideoPlayer *player = self.playersByTextureId[input.textureId];
-  [self.registry unregisterTexture:input.textureId.intValue];
-  [self.playersByTextureId removeObjectForKey:input.textureId];
+- (void)dispose:(FLTTextureMessage*)input error:(FlutterError**)error {
+  FLTVideoPlayer* player = _players[input.textureId];
+  [_registry unregisterTexture:input.textureId.intValue];
+  [_players removeObjectForKey:input.textureId];
   // If the Flutter contains https://github.com/flutter/engine/pull/12695,
   // the `player` is disposed via `onTextureUnregistered` at the right time.
   // Without https://github.com/flutter/engine/pull/12695, there is no guarantee that the
@@ -739,49 +775,47 @@ NS_INLINE CGFloat radiansToDegrees(CGFloat radians) {
                  });
 }
 
-- (void)setLooping:(FLTLoopingMessage *)input error:(FlutterError **)error {
-  FLTVideoPlayer *player = self.playersByTextureId[input.textureId];
-  player.isLooping = input.isLooping.boolValue;
+- (void)setLooping:(FLTLoopingMessage*)input error:(FlutterError**)error {
+  FLTVideoPlayer* player = _players[input.textureId];
+  [player setIsLooping:[input.isLooping boolValue]];
 }
 
-- (void)setVolume:(FLTVolumeMessage *)input error:(FlutterError **)error {
-  FLTVideoPlayer *player = self.playersByTextureId[input.textureId];
-  [player setVolume:input.volume.doubleValue];
+- (void)setVolume:(FLTVolumeMessage*)input error:(FlutterError**)error {
+  FLTVideoPlayer* player = _players[input.textureId];
+  [player setVolume:[input.volume doubleValue]];
 }
 
-- (void)setPlaybackSpeed:(FLTPlaybackSpeedMessage *)input error:(FlutterError **)error {
-  FLTVideoPlayer *player = self.playersByTextureId[input.textureId];
-  [player setPlaybackSpeed:input.speed.doubleValue];
+- (void)setPlaybackSpeed:(FLTPlaybackSpeedMessage*)input error:(FlutterError**)error {
+  FLTVideoPlayer* player = _players[input.textureId];
+  [player setPlaybackSpeed:[input.speed doubleValue]];
 }
 
-- (void)play:(FLTTextureMessage *)input error:(FlutterError **)error {
-  FLTVideoPlayer *player = self.playersByTextureId[input.textureId];
+- (void)play:(FLTTextureMessage*)input error:(FlutterError**)error {
+  FLTVideoPlayer* player = _players[input.textureId];
   [player play];
 }
 
-- (FLTPositionMessage *)position:(FLTTextureMessage *)input error:(FlutterError **)error {
-  FLTVideoPlayer *player = self.playersByTextureId[input.textureId];
-  // FLTPositionMessage *result = [FLTPositionMessage makeWithTextureId:input.textureId
+- (FLTPositionMessage*)position:(FLTTextureMessage*)input error:(FlutterError**)error {
+  FLTVideoPlayer* player = _players[input.textureId];
   FLTPositionMessage* result = [[FLTPositionMessage alloc] init];
-  result.position = @([player position]);                                                          position:@([player position])];
+  result.position = @([player position]);
   return result;
 }
 
-- (void)seekTo:(FLTPositionMessage *)input error:(FlutterError **)error {
-  FLTVideoPlayer *player = self.playersByTextureId[input.textureId];
-  [player seekTo:input.position.intValue];
-  
-  [self.registry textureFrameAvailable:input.textureId.intValue];
+- (void)seekTo:(FLTPositionMessage*)input error:(FlutterError**)error {
+  FLTVideoPlayer* player = _players[input.textureId];
+  [player seekTo:[input.position intValue]];
 }
 
-- (void)pause:(FLTTextureMessage *)input error:(FlutterError **)error {
-  FLTVideoPlayer *player = self.playersByTextureId[input.textureId];
+- (void)pause:(FLTTextureMessage*)input error:(FlutterError**)error {
+  FLTVideoPlayer* player = _players[input.textureId];
   [player pause];
+
 }
 
-- (void)setMixWithOthers:(FLTMixWithOthersMessage *)input
-                   error:(FlutterError *_Nullable __autoreleasing *)error {
-  if (input.mixWithOthers.boolValue) {
+- (void)setMixWithOthers:(FLTMixWithOthersMessage*)input
+                   error:(FlutterError* _Nullable __autoreleasing*)error {
+  if ([input.mixWithOthers boolValue]) {
     [[AVAudioSession sharedInstance] setCategory:AVAudioSessionCategoryPlayback
                                      withOptions:AVAudioSessionCategoryOptionMixWithOthers
                                            error:nil];
@@ -792,14 +826,13 @@ NS_INLINE CGFloat radiansToDegrees(CGFloat radians) {
 
 - (void)setPictureInPicture:(FLTPictureInPictureMessage*)input error:(FlutterError**)error {
   FLTVideoPlayer* player = _players[input.textureId];
-  
     if (input.enabled.intValue == 1) {
+        // [player usePlayerLayer: CGRectMake(0, 0, 340, 290)];
         [player usePlayerLayer: CGRectMake(input.left.floatValue, input.top.floatValue,
                                            input.width.floatValue, input.height.floatValue)];
     } else {
         [player setPictureInPicture:false];
     }
 }
-
 
 @end
