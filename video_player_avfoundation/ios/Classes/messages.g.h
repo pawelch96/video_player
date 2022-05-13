@@ -17,69 +17,65 @@ NS_ASSUME_NONNULL_BEGIN
 @class FLTPictureInPictureMessage;
 
 @interface FLTTextureMessage : NSObject
-@property(nonatomic, strong, nullable) NSNumber *textureId;
+@property(nonatomic, strong, nullable) NSNumber * textureId;
 @end
 
 @interface FLTCreateMessage : NSObject
-@property(nonatomic, copy, nullable) NSString *asset;
-@property(nonatomic, copy, nullable) NSString *uri;
-@property(nonatomic, copy, nullable) NSString *packageName;
-@property(nonatomic, copy, nullable) NSString *formatHint;
+@property(nonatomic, copy, nullable) NSString * asset;
+@property(nonatomic, copy, nullable) NSString * uri;
+@property(nonatomic, copy, nullable) NSString * packageName;
+@property(nonatomic, copy, nullable) NSString * formatHint;
+@property(nonatomic, strong, nullable) NSDictionary * httpHeaders;
 @end
 
 @interface FLTLoopingMessage : NSObject
-@property(nonatomic, strong, nullable) NSNumber *textureId;
-@property(nonatomic, strong, nullable) NSNumber *isLooping;
+@property(nonatomic, strong, nullable) NSNumber * textureId;
+@property(nonatomic, strong, nullable) NSNumber * isLooping;
 @end
 
 @interface FLTVolumeMessage : NSObject
-@property(nonatomic, strong, nullable) NSNumber *textureId;
-@property(nonatomic, strong, nullable) NSNumber *volume;
+@property(nonatomic, strong, nullable) NSNumber * textureId;
+@property(nonatomic, strong, nullable) NSNumber * volume;
 @end
 
 @interface FLTPlaybackSpeedMessage : NSObject
-@property(nonatomic, strong, nullable) NSNumber *textureId;
-@property(nonatomic, strong, nullable) NSNumber *speed;
+@property(nonatomic, strong, nullable) NSNumber * textureId;
+@property(nonatomic, strong, nullable) NSNumber * speed;
 @end
 
 @interface FLTPositionMessage : NSObject
-@property(nonatomic, strong, nullable) NSNumber *textureId;
-@property(nonatomic, strong, nullable) NSNumber *position;
+@property(nonatomic, strong, nullable) NSNumber * textureId;
+@property(nonatomic, strong, nullable) NSNumber * position;
 @end
 
 @interface FLTMixWithOthersMessage : NSObject
-@property(nonatomic, strong, nullable) NSNumber *mixWithOthers;
+@property(nonatomic, strong, nullable) NSNumber * mixWithOthers;
 @end
 
 @interface FLTPictureInPictureMessage : NSObject
-@property(nonatomic, strong, nullable) NSNumber *textureId;
-@property(nonatomic, strong, nullable) NSNumber *enabled;
-@property(nonatomic, strong, nullable) NSNumber *left;
-@property(nonatomic, strong, nullable) NSNumber *top;
-@property(nonatomic, strong, nullable) NSNumber *width;
-@property(nonatomic, strong, nullable) NSNumber *height;
+@property(nonatomic, strong, nullable) NSNumber * textureId;
+@property(nonatomic, strong, nullable) NSNumber * enabled;
+@property(nonatomic, strong, nullable) NSNumber * left;
+@property(nonatomic, strong, nullable) NSNumber * top;
+@property(nonatomic, strong, nullable) NSNumber * width;
+@property(nonatomic, strong, nullable) NSNumber * height;
 @end
 
 @protocol FLTVideoPlayerApi
-- (void)initialize:(FlutterError *_Nullable *_Nonnull)error;
-- (nullable FLTTextureMessage *)create:(FLTCreateMessage *)input
-                                 error:(FlutterError *_Nullable *_Nonnull)error;
-- (void)dispose:(FLTTextureMessage *)input error:(FlutterError *_Nullable *_Nonnull)error;
-- (void)setLooping:(FLTLoopingMessage *)input error:(FlutterError *_Nullable *_Nonnull)error;
-- (void)setVolume:(FLTVolumeMessage *)input error:(FlutterError *_Nullable *_Nonnull)error;
-- (void)setPlaybackSpeed:(FLTPlaybackSpeedMessage *)input
-                   error:(FlutterError *_Nullable *_Nonnull)error;
-- (void)play:(FLTTextureMessage *)input error:(FlutterError *_Nullable *_Nonnull)error;
-- (nullable FLTPositionMessage *)position:(FLTTextureMessage *)input
-                                    error:(FlutterError *_Nullable *_Nonnull)error;
-- (void)seekTo:(FLTPositionMessage *)input error:(FlutterError *_Nullable *_Nonnull)error;
-- (void)pause:(FLTTextureMessage *)input error:(FlutterError *_Nullable *_Nonnull)error;
-- (void)setMixWithOthers:(FLTMixWithOthersMessage *)input
-                   error:(FlutterError *_Nullable *_Nonnull)error;
-- (void)setPictureInPicture:(FLTPictureInPictureMessage *)input error:(FlutterError *_Nullable *_Nonnull)error;
+-(void)initialize:(FlutterError *_Nullable *_Nonnull)error;
+-(nullable FLTTextureMessage *)create:(FLTCreateMessage*)input error:(FlutterError *_Nullable *_Nonnull)error;
+-(void)dispose:(FLTTextureMessage*)input error:(FlutterError *_Nullable *_Nonnull)error;
+-(void)setLooping:(FLTLoopingMessage*)input error:(FlutterError *_Nullable *_Nonnull)error;
+-(void)setVolume:(FLTVolumeMessage*)input error:(FlutterError *_Nullable *_Nonnull)error;
+-(void)setPlaybackSpeed:(FLTPlaybackSpeedMessage*)input error:(FlutterError *_Nullable *_Nonnull)error;
+-(void)play:(FLTTextureMessage*)input error:(FlutterError *_Nullable *_Nonnull)error;
+-(nullable FLTPositionMessage *)position:(FLTTextureMessage*)input error:(FlutterError *_Nullable *_Nonnull)error;
+-(void)seekTo:(FLTPositionMessage*)input error:(FlutterError *_Nullable *_Nonnull)error;
+-(void)pause:(FLTTextureMessage*)input error:(FlutterError *_Nullable *_Nonnull)error;
+-(void)setMixWithOthers:(FLTMixWithOthersMessage*)input error:(FlutterError *_Nullable *_Nonnull)error;
+-(void)setPictureInPicture:(FLTPictureInPictureMessage*)input error:(FlutterError *_Nullable *_Nonnull)error;
 @end
 
-extern void FLTVideoPlayerApiSetup(id<FlutterBinaryMessenger> binaryMessenger,
-                                   id<FLTVideoPlayerApi> _Nullable api);
+extern void FLTVideoPlayerApiSetup(id<FlutterBinaryMessenger> binaryMessenger, id<FLTVideoPlayerApi> _Nullable api);
 
 NS_ASSUME_NONNULL_END

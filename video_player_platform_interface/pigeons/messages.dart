@@ -64,3 +64,15 @@ abstract class VideoPlayerApi {
   void setMixWithOthers(MixWithOthersMessage msg);
   void setPictureInPicture(PictureInPictureMessage msg);
 }
+
+// void configurePigeon(PigeonOptions opts) {
+//   opts.dartOut = '../video_player_platform_interface/lib/messages.dart';
+//   opts.objcHeaderOut =
+//       '../../video_player_avfoundation/ios/Classes/messages.g.h';
+//   opts.objcSourceOut =
+//       '../../video_player_avfoundation/ios/Classes/messages.g.m';
+//   opts.objcOptions!.prefix = 'FLT';
+  // opts.javaOut =
+  //     'android/src/main/java/io/flutter/plugins/videoplayer/Messages.java';
+  // opts.javaOptions!.package = 'io.flutter.plugins.videoplayer';
+// }
