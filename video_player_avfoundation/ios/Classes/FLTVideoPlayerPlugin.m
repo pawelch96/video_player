@@ -761,7 +761,8 @@ NS_INLINE CGFloat radiansToDegrees(CGFloat radians) {
 
 - (FLTPositionMessage *)position:(FLTTextureMessage *)input error:(FlutterError **)error {
   FLTVideoPlayer *player = self.playersByTextureId[input.textureId];
-  FLTPositionMessage *result = [FLTPositionMessage makeWithTextureId:input.textureId position:@([player position])];                                                         position:@([player position])];
+  FLTPositionMessage *result = [FLTPositionMessage makeWithTextureId:input.textureId
+                                                            position:@([player position])];
   return result;
 }
 
