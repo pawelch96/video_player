@@ -14,7 +14,7 @@ flutter:
     implements: video_player
     platforms:
       ios:
-        dartPluginClass: MethodChannelVideoPlayer
+        # dartPluginClass: MethodChannelVideoPlayer
         pluginClass: FLTVideoPlayerPlugin
 
 dependencies:
