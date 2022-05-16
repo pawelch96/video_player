@@ -382,13 +382,9 @@ static inline CGFloat radiansToDegrees(CGFloat radians) {
           // Cancelled, or something failed.
           return;
         }
-        // This completion block will run on an unknown AVFoundation completion
-        // queue thread. Hop back to the main thread to set up event sink.
-        if (!NSThread.isMainThread) {
-          [self performSelector:_cmd onThread:NSThread.mainThread withObject:self waitUntilDone:NO];
-        } else {
-          [self setupEventSinkIfReadyToPlay];
-        }
+        // This completion block will run on an AVFoundation background queue.
+        // Hop back to the main thread to set up event sink.
+        [self performSelector:_cmd onThread:NSThread.mainThread withObject:self waitUntilDone:NO];
       };
       [asset loadValuesAsynchronouslyForKeys:@[ @"tracks" ]
                            completionHandler:trackCompletionHandler];
@@ -396,9 +392,13 @@ static inline CGFloat radiansToDegrees(CGFloat radians) {
     }
 
     BOOL hasVideoTracks = [asset tracksWithMediaType:AVMediaTypeVideo].count != 0;
+    BOOL hasNoTracks = asset.tracks.count == 0;
 
-    // The player has not yet initialized when it contains video tracks.
-    if (hasVideoTracks && height == CGSizeZero.height && width == CGSizeZero.width) {
+    // The player has not yet initialized when it has no size, unless it is an audio-only track.
+    // HLS m3u8 video files never load any tracks, and are also not yet initialized until they have
+    // a size.
+    if ((hasVideoTracks || hasNoTracks) && height == CGSizeZero.height &&
+        width == CGSizeZero.width) {
       return;
     }
     // The player may be initialized but still needs to determine the duration.
@@ -407,7 +407,7 @@ static inline CGFloat radiansToDegrees(CGFloat radians) {
       return;
     }
 
-    _isInitialized = true;
+    _isInitialized = YES;
     _eventSink(@{
       @"event" : @"initialized",
       @"duration" : @(duration),
