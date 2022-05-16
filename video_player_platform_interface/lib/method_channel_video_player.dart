@@ -18,6 +18,10 @@ import 'video_player_platform_interface.dart';
 class MethodChannelVideoPlayer extends VideoPlayerPlatform {
   final VideoPlayerApi _api = VideoPlayerApi();
 
+  static void registerWith() {
+    VideoPlayerPlatform.instance = MethodChannelVideoPlayer();
+  }
+
   @override
   Future<void> init() {
     return _api.initialize();

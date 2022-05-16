@@ -774,11 +774,12 @@ class _VideoPlayerState extends State<VideoPlayer> {
   _VideoPlayerState() {
     _listener = () {
       final int _newTextureId = widget.controller.textureId;
-      final bool _newEnabledVideo = !widget.controller.value.isShowingPIP;
-      if (_newTextureId != _textureId || _newEnabledVideo != _enabledVideo) {
+      // final bool _newEnabledVideo = !widget.controller.value.isShowingPIP;
+      if (_newTextureId != _textureId) {
+        //|| _newEnabledVideo != _enabledVideo
         setState(() {
           _textureId = _newTextureId;
-          _enabledVideo = _newEnabledVideo;
+          // _enabledVideo = _newEnabledVideo;
         });
       }
     };
@@ -786,13 +787,13 @@ class _VideoPlayerState extends State<VideoPlayer> {
 
   late VoidCallback _listener;
   late int _textureId;
-  late bool _enabledVideo;
+  // late bool _enabledVideo;
 
   @override
   void initState() {
     super.initState();
     _textureId = widget.controller.textureId;
-    _enabledVideo = (!widget.controller.value.isShowingPIP);
+    // _enabledVideo = (!widget.controller.value.isShowingPIP);
     // Need to listen for initialization events since the actual texture ID
     // becomes available after asynchronous initialization finishes.
     widget.controller.addListener(_listener);
@@ -803,7 +804,7 @@ class _VideoPlayerState extends State<VideoPlayer> {
     super.didUpdateWidget(oldWidget);
     oldWidget.controller.removeListener(_listener);
     _textureId = widget.controller.textureId;
-    _enabledVideo = (!widget.controller.value.isShowingPIP);
+    // _enabledVideo = (!widget.controller.value.isShowingPIP);
     widget.controller.addListener(_listener);
   }
 
@@ -815,10 +816,9 @@ class _VideoPlayerState extends State<VideoPlayer> {
 
   @override
   Widget build(BuildContext context) {
-    return _textureId == VideoPlayerController.kUninitializedTextureId ||
-            !_enabledVideo
+    return _textureId == VideoPlayerController.kUninitializedTextureId
         ? Container()
-        : _videoPlayerPlatform.buildView(_textureId);
+        : _videoPlayerPlatform.buildView(_textureId); //|| !_enabledVideo
   }
 }
 
