@@ -631,7 +631,7 @@ NS_INLINE CGFloat radiansToDegrees(CGFloat radians) {
 
 @end
 
-@interface FLTVideoPlayerPlugin () <FLTAVFoundationVideoPlayerApi>
+@interface FLTVideoPlayerPlugin () <FLTVideoPlayerApi>
 @property(readonly, weak, nonatomic) NSObject<FlutterTextureRegistry> *registry;
 @property(readonly, weak, nonatomic) NSObject<FlutterBinaryMessenger> *messenger;
 @property(readonly, strong, nonatomic)
@@ -643,7 +643,7 @@ NS_INLINE CGFloat radiansToDegrees(CGFloat radians) {
 + (void)registerWithRegistrar:(NSObject<FlutterPluginRegistrar> *)registrar {
   FLTVideoPlayerPlugin *instance = [[FLTVideoPlayerPlugin alloc] initWithRegistrar:registrar];
   [registrar publish:instance];
-  FLTAVFoundationVideoPlayerApiSetup(registrar.messenger, instance);
+  FLTVideoPlayerApiSetup(registrar.messenger, instance);
 }
 
 - (instancetype)initWithRegistrar:(NSObject<FlutterPluginRegistrar> *)registrar {
@@ -676,9 +676,9 @@ NS_INLINE CGFloat radiansToDegrees(CGFloat radians) {
   [eventChannel setStreamHandler:player];
   player.eventChannel = eventChannel;
   self.playersByTextureId[@(textureId)] = player;
-  // FLTTextureMessage *result = [FLTTextureMessage makeWithTextureId:@(textureId)];
-  FLTTextureMessage* result = [[FLTTextureMessage alloc] init];
-  result.textureId = @(textureId);
+  FLTTextureMessage *result = [FLTTextureMessage makeWithTextureId:@(textureId)];
+  // FLTTextureMessage* result = [[FLTTextureMessage alloc] init];
+  // result.textureId = @(textureId);
   return result;
 }
 
@@ -761,9 +761,8 @@ NS_INLINE CGFloat radiansToDegrees(CGFloat radians) {
 
 - (FLTPositionMessage *)position:(FLTTextureMessage *)input error:(FlutterError **)error {
   FLTVideoPlayer *player = self.playersByTextureId[input.textureId];
-  // FLTPositionMessage *result = [FLTPositionMessage makeWithTextureId:input.textureId
-  FLTPositionMessage* result = [[FLTPositionMessage alloc] init];
-  result.position = @([player position]);                                                          position:@([player position])];
+   FLTPositionMessage *result = [FLTPositionMessage makeWithTextureId:input.textureId
+                                                            position:@([player position])];                                                         position:@([player position])];
   return result;
 }
 
@@ -791,7 +790,7 @@ NS_INLINE CGFloat radiansToDegrees(CGFloat radians) {
 }
 
 - (void)setPictureInPicture:(FLTPictureInPictureMessage*)input error:(FlutterError**)error {
-  FLTVideoPlayer* player = _players[input.textureId];
+  FLTVideoPlayer* player = self.playersByTextureId[input.textureId];
   
     if (input.enabled.intValue == 1) {
         [player usePlayerLayer: CGRectMake(input.left.floatValue, input.top.floatValue,

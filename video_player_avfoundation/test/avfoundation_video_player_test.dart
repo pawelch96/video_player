@@ -88,6 +88,11 @@ class _ApiLogger implements TestHostVideoPlayerApi {
     log.add('setPlaybackSpeed');
     playbackSpeedMessage = arg;
   }
+
+  @override
+  void setPictureInPicture(PictureInPictureMessage msg) {
+    // TODO: implement setPictureInPicture
+  }
 }
 
 void main() {
