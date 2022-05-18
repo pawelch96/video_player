@@ -307,6 +307,13 @@ enum VideoEventType {
   unknown,
 }
 
+enum VideoPiPEventType {
+  startingPiP,
+  stoppingPiP,
+  expandPiPButtonTapped,
+  closePiPButtonTapped
+}
+
 /// Describes a discrete segment of time within a video using a [start] and
 /// [end] [Duration].
 @immutable

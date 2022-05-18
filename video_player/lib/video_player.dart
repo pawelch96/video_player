@@ -303,6 +303,7 @@ class VideoPlayerController extends ValueNotifier<VideoPlayerValue> {
   Completer<void>? _creatingCompleter;
   StreamSubscription<dynamic>? _eventSubscription;
   _VideoAppLifeCycleObserver? _lifeCycleObserver;
+  // StreamController<VideoPiPEventType>? _streamController;
 
   /// The id of a texture that hasn't been initialized.
   @visibleForTesting
@@ -360,6 +361,8 @@ class VideoPlayerController extends ValueNotifier<VideoPlayerValue> {
           .setMixWithOthers(videoPlayerOptions!.mixWithOthers);
     }
 
+    // _streamController = StreamController<VideoPiPEventType>();
+
     _textureId = (await _videoPlayerPlatform.create(dataSourceDescription)) ??
         kUninitializedTextureId;
     _creatingCompleter!.complete(null);
@@ -401,18 +404,22 @@ class VideoPlayerController extends ValueNotifier<VideoPlayerValue> {
           break;
         case VideoEventType.startingPiP:
           value = value.copyWith(isShowingPIP: true);
+          // _streamController.add(VideoPiPEventType.);
           break;
         case VideoEventType.stoppedPiP:
           value = value.copyWith(isShowingPIP: false);
+          // _streamController.add(VideoPiPEventType.);
           break;
         case VideoEventType.expandButtonTapPiP:
           value = value.copyWith(isBuffering: false);
+          // _streamController.add(VideoPiPEventType.);
           break;
         case VideoEventType.closeButtonTapPiP:
           value = value.copyWith(
             isPlaying: false,
             isBuffering: false,
           );
+          // _streamController.add(VideoPiPEventType.);
           break;
         case VideoEventType.unknown:
           break;
@@ -447,6 +454,7 @@ class VideoPlayerController extends ValueNotifier<VideoPlayerValue> {
         _timer?.cancel();
         await _eventSubscription?.cancel();
         await _videoPlayerPlatform.dispose(_textureId);
+        // _streamController?.cancel();
       }
       _lifeCycleObserver?.dispose();
     }
@@ -625,6 +633,8 @@ class VideoPlayerController extends ValueNotifier<VideoPlayerValue> {
     value = value.copyWith(playbackSpeed: speed);
     await _applyPlaybackSpeed();
   }
+
+  // Stream<VideoPiPEventType> videoPiPstatus() => _streamController!.stream;
 
   /// Sets the caption offset.
   ///
