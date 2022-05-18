@@ -312,7 +312,8 @@ class VideoPlayerController extends ValueNotifier<VideoPlayerValue> {
   Completer<void>? _creatingCompleter;
   StreamSubscription<dynamic>? _eventSubscription;
   _VideoAppLifeCycleObserver? _lifeCycleObserver;
-  StreamController<VideoPiPEventType>? _streamController;
+  StreamController<VideoPiPEventType>? _streamController =
+      StreamController<VideoPiPEventType>();
 
   /// The id of a texture that hasn't been initialized.
   @visibleForTesting
@@ -369,8 +370,6 @@ class VideoPlayerController extends ValueNotifier<VideoPlayerValue> {
       await _videoPlayerPlatform
           .setMixWithOthers(videoPlayerOptions!.mixWithOthers);
     }
-
-    _streamController = StreamController<VideoPiPEventType>();
 
     _textureId = (await _videoPlayerPlatform.create(dataSourceDescription)) ??
         kUninitializedTextureId;
