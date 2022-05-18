@@ -32,6 +32,15 @@ VideoPlayerPlatform get _videoPlayerPlatform {
 
 /// The duration, current position, buffering state, error state and settings
 /// of a [VideoPlayerController].
+///
+
+enum VideoPiPEventType {
+  startingPiP,
+  stoppingPiP,
+  expandPiPButtonTapped,
+  closePiPButtonTapped
+}
+
 class VideoPlayerValue {
   /// Constructs a video with the given values. Only [duration] is required. The
   /// rest will initialize with default values when unset.
@@ -303,7 +312,7 @@ class VideoPlayerController extends ValueNotifier<VideoPlayerValue> {
   Completer<void>? _creatingCompleter;
   StreamSubscription<dynamic>? _eventSubscription;
   _VideoAppLifeCycleObserver? _lifeCycleObserver;
-  // StreamController<VideoPiPEventType>? _streamController;
+  StreamController<VideoPiPEventType>? _streamController;
 
   /// The id of a texture that hasn't been initialized.
   @visibleForTesting
@@ -361,7 +370,7 @@ class VideoPlayerController extends ValueNotifier<VideoPlayerValue> {
           .setMixWithOthers(videoPlayerOptions!.mixWithOthers);
     }
 
-    // _streamController = StreamController<VideoPiPEventType>();
+    _streamController = StreamController<VideoPiPEventType>();
 
     _textureId = (await _videoPlayerPlatform.create(dataSourceDescription)) ??
         kUninitializedTextureId;
@@ -404,22 +413,22 @@ class VideoPlayerController extends ValueNotifier<VideoPlayerValue> {
           break;
         case VideoEventType.startingPiP:
           value = value.copyWith(isShowingPIP: true);
-          // _streamController.add(VideoPiPEventType.);
+          _streamController!.add(VideoPiPEventType.startingPiP);
           break;
         case VideoEventType.stoppedPiP:
           value = value.copyWith(isShowingPIP: false);
-          // _streamController.add(VideoPiPEventType.);
+          _streamController!.add(VideoPiPEventType.stoppingPiP);
           break;
         case VideoEventType.expandButtonTapPiP:
           value = value.copyWith(isBuffering: false);
-          // _streamController.add(VideoPiPEventType.);
+          _streamController!.add(VideoPiPEventType.expandPiPButtonTapped);
           break;
         case VideoEventType.closeButtonTapPiP:
           value = value.copyWith(
             isPlaying: false,
             isBuffering: false,
           );
-          // _streamController.add(VideoPiPEventType.);
+          _streamController!.add(VideoPiPEventType.closePiPButtonTapped);
           break;
         case VideoEventType.unknown:
           break;
@@ -454,7 +463,7 @@ class VideoPlayerController extends ValueNotifier<VideoPlayerValue> {
         _timer?.cancel();
         await _eventSubscription?.cancel();
         await _videoPlayerPlatform.dispose(_textureId);
-        // _streamController?.cancel();
+        _streamController?.close();
       }
       _lifeCycleObserver?.dispose();
     }
@@ -634,7 +643,7 @@ class VideoPlayerController extends ValueNotifier<VideoPlayerValue> {
     await _applyPlaybackSpeed();
   }
 
-  // Stream<VideoPiPEventType> videoPiPstatus() => _streamController!.stream;
+  Stream<VideoPiPEventType> videoPiPstatus() => _streamController!.stream;
 
   /// Sets the caption offset.
   ///
