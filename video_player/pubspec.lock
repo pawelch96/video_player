@@ -175,7 +175,7 @@ packages:
     description:
       path: video_player_android
       ref: main
-      resolved-ref: "35bd39646accfa183a9a687e6a7116a6e81ce20f"
+      resolved-ref: "453a84b922e67593c4a03edcc11a95728c7cbe86"
       url: "https://github.com/pawelch96/video_player.git"
     source: git
     version: "2.3.3"
@@ -184,7 +184,7 @@ packages:
     description:
       path: video_player_avfoundation
       ref: main
-      resolved-ref: "0a4cc4d7eced7906e94e87fda3ef914d55ff518d"
+      resolved-ref: "453a84b922e67593c4a03edcc11a95728c7cbe86"
       url: "https://github.com/pawelch96/video_player.git"
     source: git
     version: "2.3.4"
@@ -193,7 +193,7 @@ packages:
     description:
       path: video_player_platform_interface
       ref: main
-      resolved-ref: "1606b36517703e919396164e71ddb59d4eed7217"
+      resolved-ref: "453a84b922e67593c4a03edcc11a95728c7cbe86"
       url: "https://github.com/pawelch96/video_player.git"
     source: git
     version: "5.1.2"

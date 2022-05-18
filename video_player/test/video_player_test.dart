@@ -85,6 +85,12 @@ class FakeController extends ValueNotifier<VideoPlayerValue>
     // TODO: implement setPIP
     throw UnimplementedError();
   }
+
+  @override
+  Stream<VideoPiPEventType> videoPiPstatus() {
+    // TODO: implement videoPiPstatus
+    throw UnimplementedError();
+  }
 }
 
 Future<ClosedCaptionFile> _loadClosedCaption() async =>
