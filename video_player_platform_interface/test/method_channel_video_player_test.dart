@@ -90,9 +90,7 @@ class _ApiLogger implements TestHostVideoPlayerApi {
   }
 
   @override
-  void setPictureInPicture(PictureInPictureMessage arg) {
-    // TODO: implement setPictureInPicture
-  }
+  void setPictureInPicture(PictureInPictureMessage arg) {}
 }
 
 void main() {

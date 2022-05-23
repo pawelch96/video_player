@@ -82,13 +82,11 @@ class FakeController extends ValueNotifier<VideoPlayerValue>
       double top = 0.0,
       double width = 0.0,
       double height = 0.0}) {
-    // TODO: implement setPIP
     throw UnimplementedError();
   }
 
   @override
   Stream<VideoPiPEventType> videoPiPstatus() {
-    // TODO: implement videoPiPstatus
     throw UnimplementedError();
   }
 }

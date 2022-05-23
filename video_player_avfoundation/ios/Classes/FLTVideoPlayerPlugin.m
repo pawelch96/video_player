@@ -240,7 +240,6 @@ NS_INLINE CGFloat radiansToDegrees(CGFloat radians) {
 
   _player = [AVPlayer playerWithPlayerItem:item];
   _player.actionAtItemEnd = AVPlayerActionAtItemEndNone;
-  // _player.automaticallyWaitsToMinimizeStalling = false;
 
   [self createVideoOutputAndDisplayLink:frameUpdater];
 
@@ -443,9 +442,6 @@ NS_INLINE CGFloat radiansToDegrees(CGFloat radians) {
 
 - (void)setPictureInPicture:(BOOL)pictureInPicture
 {
-    // if (self._pictureInPicture == pictureInPicture) {
-    //     return;
-    // }
 
     self._pictureInPicture = pictureInPicture;
     if (@available(iOS 9.0, *)) {
@@ -506,7 +502,6 @@ NS_INLINE CGFloat radiansToDegrees(CGFloat radians) {
         self._playerLayer.frame = frame;
         
         self._playerLayer.needsDisplayOnBoundsChange = YES;
-        //[self._playerLayer addObserver:self forKeyPath:readyForDisplayKeyPath options:NSKeyValueObservingOptionNew context:nil];
         [vc.view.layer addSublayer:self._playerLayer];
         vc.view.layer.needsDisplayOnBoundsChange = YES;
         
@@ -518,16 +513,11 @@ NS_INLINE CGFloat radiansToDegrees(CGFloat radians) {
 - (void)removePlayerLayer
 {
   [self._playerLayer removeFromSuperlayer];
-//  if (_playerLayerObserverSet) {
-//    [self._playerLayer removeObserver:self forKeyPath:readyForDisplayKeyPath];
-//    _playerLayerObserverSet = NO;
-//  }
     self._playerLayer = nil;
     
 }
 #endif
 
-// #if TARGET_OS_IOS //TODO
 - (void)pictureInPictureControllerDidStopPictureInPicture:(AVPictureInPictureController *)pictureInPictureController  API_AVAILABLE(ios(9.0)){
     [self removePlayerLayer];
     if (_eventSink != nil) {
@@ -535,12 +525,10 @@ NS_INLINE CGFloat radiansToDegrees(CGFloat radians) {
     }
     bool isPlaying = self.player.rate != 0 && self.player.error == nil;
     if (isPlaying) {
-        // 
         if (_eventSink != nil) {
           _eventSink(@{@"event" : @"expandButtonTapPiP"});
         }
     } else {
-        // close PIP button
         _isPlaying = false;
         [self updatePlayingState];
         if (_eventSink != nil) {
@@ -571,7 +559,6 @@ NS_INLINE CGFloat radiansToDegrees(CGFloat radians) {
 - (void)pictureInPictureController:(AVPictureInPictureController *)pictureInPictureController restoreUserInterfaceForPictureInPictureStopWithCompletionHandler:(void (^)(BOOL))completionHandler {
     [self setRestoreUserInterfaceForPIPStopCompletionHandler: true];
 }
-// #endif //TODO
 
 - (CVPixelBufferRef)copyPixelBuffer {
   CMTime outputItemTime = [_videoOutput itemTimeForHostTime:CACurrentMediaTime()];
